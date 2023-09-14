@@ -328,8 +328,23 @@ namespace IsoMesh
         /// <param name="onlySendBufferOnChange">Whether to invoke the components and inform them the buffer has changed. This is only really necessary when the size changes.
         /// 是否调用组件并通知它们缓冲区已更改。只有当大小发生变化时才需要这样做。
         /// </param>
+        /// [AI assist]这段代码是一个名为RebuildGlobalMeshData的方法，主要执行以下操作：
+        /// 记录之前的全局网格样本数量(m_meshSamples.Count)和经过打包的UV坐标数量(m_meshPackedUVs.Count)。
+        /// 清除全局网格样本、打包的UV坐标、样本的起始索引、UV坐标的起始索引的集合。
+        /// 从m_globalSDFMeshes列表中移除为空或其Asset属性为空的SDF网格对象。
+        /// 检查传入的locals列表中的每一个元素，如果这个元素是SDF网格并且并未在m_globalSDFMeshes列表中，则将它添加到m_globalSDFMeshes中。
+        /// 遍历m_globalSDFMeshes，对于每一个SDF网格，如果它在m_meshCounts中的计数大于0（也就表示它存在于某个群组中），则获取它的样本数据和打包后的UV数据。
+        /// 如果这个SDF网格的ID在m_meshSdfSampleStartIndices中不存在，则将网格样本添加到m_meshSamples的末尾，并记录下这些样本在m_meshSamples中的起始索引。类似的处理打包的UV坐标和起始索引。
+        /// 如果m_meshSamplesBuffer为null或无效，或者加入新的样本后样本数量发生改变，则释放m_meshSamplesBuffer的内存，创建一个新的buffer，并设置一个标志位表示新的buffer已经创建。
+        /// 如果全局样本集合数量大于0，则将其全部数据设置到m_meshSamplesBuffer。
+        /// 对打包的UV坐标进行类似步骤7和步骤8的处理，创建新的buffer并设置数据。
+        /// 设置全局网格数据状态为“未修改”。
+        /// 返回是否创建了新的buffer。
+        /// 这段代码整体上的功能是对网格的样本和UV数据进行重新构建和缓存，清除无效的网格，保存有效网格的样本和UV数据，如果有新的数据加入则创建新的计算buffer来存储。
         private static bool RebuildGlobalMeshData(IList<SDFObject> locals, bool onlySendBufferOnChange = true)
         {
+            #region Clear
+
             var previousMeshSamplesCount = m_meshSamples.Count;
             var previousMeshUVsCount = m_meshPackedUVs.Count;
 
@@ -339,45 +354,50 @@ namespace IsoMesh
             m_meshSdfSampleStartIndices.Clear();
             m_meshSdfUVStartIndices.Clear();
 
+            #endregion
+
+            #region Update SDFOjbect
+
             // remove null refs
             for (var i = m_globalSDFMeshes.Count - 1; i >= 0; --i)
                 if (m_globalSDFMeshes[i] == null || m_globalSDFMeshes[i].Asset == null)
                     m_globalSDFMeshes.RemoveAt(i);
 
-            for (var i = 0; i < locals.Count; i++)
-                if (locals[i] is SDFMesh mesh && !m_globalSDFMeshes.Contains(mesh))
+            foreach (var sdfObj in locals)
+                if (sdfObj is SDFMesh mesh && !m_globalSDFMeshes.Contains(mesh))
                     m_globalSDFMeshes.Add(mesh);
+
+            #endregion
+
 
             // loop over each mesh, adding its samples/uvs to the sample buffer
             // and taking note of where each meshes samples start in the buffer.
             // check for repeats so we don't add the same mesh to the samples buffer twice
             // 循环遍历每个网格，将其样本/uv添加到样本缓冲区中，并注意每个网格样本在缓冲区中的起始位置。检查重复，这样我们就不会两次向样本缓冲区添加相同的网格
-            for (int i = 0; i < m_globalSDFMeshes.Count; i++)
+            foreach (var mesh in m_globalSDFMeshes)
             {
-                SDFMesh mesh = m_globalSDFMeshes[i];
-
                 // ignore meshes which are in the list but not present in any group 忽略列表中但不存在于任何组中的网格
-                if (m_meshCounts.TryGetValue(mesh.ID, out int count) && count <= 0)
+                if (m_meshCounts.TryGetValue(mesh.ID, out var count) && count <= 0)
                     continue;
 
-                mesh.Asset.GetDataArrays(out float[] samples, out float[] packedUVs);
+                mesh.Asset.GetDataArrays(out var samples, out var packedUVs);
 
                 if (!m_meshSdfSampleStartIndices.ContainsKey(mesh.ID))
                 {
-                    int startIndex = m_meshSamples.Count;
+                    var startIndex = m_meshSamples.Count;
                     m_meshSamples.AddRange(samples);
                     m_meshSdfSampleStartIndices.Add(mesh.ID, startIndex);
                 }
 
                 if (mesh.Asset.HasUVs && !m_meshSdfUVStartIndices.ContainsKey(mesh.ID))
                 {
-                    int startIndex = m_meshPackedUVs.Count;
+                    var startIndex = m_meshPackedUVs.Count;
                     m_meshPackedUVs.AddRange(packedUVs);
                     m_meshSdfUVStartIndices.Add(mesh.ID, startIndex);
                 }
             }
 
-            bool newBuffers = false;
+            var newBuffers = false;
 
             if (m_meshSamplesBuffer == null || !m_meshSamplesBuffer.IsValid() || previousMeshSamplesCount != m_meshSamples.Count)
             {
