@@ -56,6 +56,6 @@ MonoBehaviour:
     m_subsurfaceColour: {r: 0, g: 0, b: 0, a: 1}
     m_subsurfaceScatteringPower: 0
   m_smoothing: 0.000000001
-  m_asset: {fileID: 11400000, guid: 048f821f6102c3a45a2415385fd3862b, type: 2}
+  m_asset: {fileID: 11400000, guid: 5e99c2c4828a92d419aefaebdbb68114, type: 2}
   m_operation: 0
   m_flip: 0

@@ -5,13 +5,13 @@ MonoImporter:
   serializedVersion: 2
   defaultReferences:
   - m_computeShader: {fileID: 7200000, guid: 0e30fa915af718c4bb87a11c35937eb0, type: 3}
+  - m_sdfMeshAsset: {fileID: 11400000, guid: 048f821f6102c3a45a2415385fd3862b, type: 2}
   - m_group: {instanceID: 0}
   - m_meshGameObject: {instanceID: 0}
   - m_meshFilter: {instanceID: 0}
   - m_meshCollider: {instanceID: 0}
   - m_proceduralMeshMaterial: {fileID: 2100000, guid: 0de64f367f4df4247a146598773e4aad, type: 2}
   - m_meshRenderer: {instanceID: 0}
-  - boneSDF: {fileID: 11400000, guid: 048f821f6102c3a45a2415385fd3862b, type: 2}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 

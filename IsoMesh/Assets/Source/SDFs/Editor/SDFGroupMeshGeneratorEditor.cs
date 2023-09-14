@@ -10,6 +10,7 @@ namespace IsoMesh.Editor
         private static class Labels
         {
             public static GUIContent ComputeShader = new GUIContent("Compute Shader", "This compute shader contains the GPU side of this class.");
+            public static GUIContent BoneSDF = new GUIContent("Bone SDF", "x");
             public static GUIContent SDFGroup = new GUIContent("SDF Group", "An SDF group is a collection of sdf primitives, meshes, and operations which mutually interact.");
             public static GUIContent AutoUpdate = new GUIContent("Auto Update", "Whether the mesh will automatically be regenerated when any setting, on this component or the SDF Group, changes.");
             public static GUIContent OutputMode = new GUIContent("Output Mode", "This mesh can be passed directly to a material as a triangle and index buffer in 'Procedural' mode, or transfered to the CPU and sent to a MeshFilter in 'Mesh' mode.");
@@ -44,6 +45,7 @@ namespace IsoMesh.Editor
         private class SerializedProperties
         {
             public SerializedProperty ComputeShader { get; }
+            public SerializedProperty BoneSDF { get; }
             public SerializedProperty MainSettings { get; }
             public SerializedProperty VoxelSettings { get; }
             public SerializedProperty AlgorithmSettings { get; }
@@ -79,6 +81,7 @@ namespace IsoMesh.Editor
             public SerializedProperties(SerializedObject serializedObject)
             {
                 ComputeShader = serializedObject.FindProperty("m_computeShader");
+                BoneSDF = serializedObject.FindProperty("m_sdfMeshAsset");
                 SDFGroup = serializedObject.FindProperty("m_group");
                 
                 MainSettings = serializedObject.FindProperty("m_mainSettings");
@@ -142,6 +145,10 @@ namespace IsoMesh.Editor
 
             GUI.enabled = false;
             EditorGUILayout.PropertyField(m_serializedProperties.SDFGroup, Labels.SDFGroup);
+            GUI.enabled = true;
+            
+            GUI.enabled = false;
+            EditorGUILayout.PropertyField(m_serializedProperties.BoneSDF, Labels.BoneSDF);
             GUI.enabled = true;
 
             bool isControlledExternally = m_serializedProperties.SettingsControlledByGrid.boolValue;

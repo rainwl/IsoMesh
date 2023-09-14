@@ -1,4 +1,5 @@
 using System.Collections;
+using System.IO;
 using UnityEngine;
 using System.Runtime.InteropServices;
 using Source.SDFs;
@@ -148,7 +149,7 @@ namespace IsoMesh
         private TriangleData[] m_triangles;
 
         [SerializeField] private ComputeShader m_computeShader;
-
+        
         private ComputeShader ComputeShader
         {
             get
@@ -169,6 +170,40 @@ namespace IsoMesh
         }
 
         private ComputeShader m_computeShaderInstance;
+        
+        
+        
+        private const string SdfMeshAssetResourceName = "SDFMesh_SM_YZ_L4_G_64";
+        [SerializeField] private SDFMeshAsset m_sdfMeshAsset;
+        private SDFMeshAsset m_sdfMeshAssetInstance;
+
+        private SDFMeshAsset SDFMeshAssetBone
+        {
+            get
+            {
+                if (m_sdfMeshAsset) return m_sdfMeshAsset;
+                Debug.Log($"Attempting to load sdfmeshasset:{SdfMeshAssetResourceName}");
+                
+                //m_sdfMeshAsset = Resources.Load<SDFMeshAsset>(SdfMeshAssetResourceName);
+
+                var json = File.ReadAllText("SDFMesh_SM_YZ_L4_G_64.asset");
+                m_sdfMeshAsset = JsonUtility.FromJson<SDFMeshAsset>(json);
+                
+                if (!m_sdfMeshAsset)
+                {
+                    Debug.Log($"failed to load bone ");
+                }
+                else
+                {
+                    Debug.Log($"successfully loaded");
+                }
+
+                return m_sdfMeshAsset;
+            }
+        }
+        
+        
+        
 
         [SerializeField] private SDFGroup m_group;
 
@@ -651,7 +686,8 @@ namespace IsoMesh
             m_initialized = true;
 
             m_computeShaderInstance = Instantiate(ComputeShader);
-
+            m_sdfMeshAsset = Instantiate(SDFMeshAssetBone);
+            
             SendTransformToGPU();
 
             m_kernels = new Kernels(ComputeShader);
@@ -957,7 +993,9 @@ namespace IsoMesh
            
             // TODO:give bone samples to bone's sample
             m_samplesBuffer.GetData(_boneSamples);
-            
+            m_sdfMeshAsset.Samples = _boneSamples;
+            var updateJson = JsonUtility.ToJson(m_sdfMeshAsset);
+            File.WriteAllText("Assets/Resources/SDFMesh_SM_YZ_L4_G_64.asset",updateJson);
             //SDFGroup.BoneSDF.Samples = _boneSamples;
         }
 
