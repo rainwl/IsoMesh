@@ -26,6 +26,12 @@ namespace IsoMesh
 
         [SerializeField] [HideInInspector] private float[] m_packedUVs;
 
+        public float[] Samples
+        {
+            get => m_samples;
+            set => m_samples = value;
+        }
+
         public bool HasUVs => !m_packedUVs.IsNullOrEmpty();
 
         [SerializeField] [ReadOnly]

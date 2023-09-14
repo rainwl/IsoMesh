@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using System.Runtime.InteropServices;
+using Source.SDFs;
 using Unity.Collections;
 using UnityEngine.Rendering;
 
@@ -24,12 +25,14 @@ namespace IsoMesh
         {
             public static readonly int PointsPerSide_Int = Shader.PropertyToID("_PointsPerSide");
             public static readonly int CellSize_Float = Shader.PropertyToID("_CellSize");
-            
+
             public static readonly int BinarySearchIterations_Int = Shader.PropertyToID("_BinarySearchIterations");
             public static readonly int IsosurfaceExtractionType_Int = Shader.PropertyToID("_IsosurfaceExtractionType");
             public static readonly int MaxAngleCosine_Float = Shader.PropertyToID("_MaxAngleCosine");
             public static readonly int VisualNormalSmoothing = Shader.PropertyToID("_VisualNormalSmoothing");
-            public static readonly int GradientDescentIterations_Int = Shader.PropertyToID("_GradientDescentIterations");
+
+            public static readonly int GradientDescentIterations_Int =
+                Shader.PropertyToID("_GradientDescentIterations");
 
             public static readonly int Settings_StructuredBuffer = Shader.PropertyToID("_Settings");
             public static readonly int Transform_Matrix4x4 = Shader.PropertyToID("_GroupTransform");
@@ -43,19 +46,28 @@ namespace IsoMesh
             public static readonly int CellData_RWBuffer = Shader.PropertyToID("_CellDataPoints");
             public static readonly int Counter_RWBuffer = Shader.PropertyToID("_Counter");
             public static readonly int TriangleData_AppendBuffer = Shader.PropertyToID("_TriangleDataPoints");
-            public static readonly int VertexData_StructuredBuffer = Shader.PropertyToID("_VertexDataPoints_Structured");
-            public static readonly int TriangleData_StructuredBuffer = Shader.PropertyToID("_TriangleDataPoints_Structured");
+
+            public static readonly int VertexData_StructuredBuffer =
+                Shader.PropertyToID("_VertexDataPoints_Structured");
+
+            public static readonly int TriangleData_StructuredBuffer =
+                Shader.PropertyToID("_TriangleDataPoints_Structured");
 
             public static readonly int MeshTransform_Matrix4x4 = Shader.PropertyToID("_MeshTransform");
             public static readonly int MeshVertices_RWBuffer = Shader.PropertyToID("_MeshVertices");
             public static readonly int MeshNormals_RWBuffer = Shader.PropertyToID("_MeshNormals");
+
             public static readonly int MeshTriangles_RWBuffer = Shader.PropertyToID("_MeshTriangles");
+
             //public static readonly int MeshUVs_RWBuffer = Shader.PropertyToID("_MeshUVs");
             public static readonly int MeshVertexColours_RWBuffer = Shader.PropertyToID("_MeshVertexColours");
             public static readonly int MeshVertexMaterials_RWBuffer = Shader.PropertyToID("_MeshVertexMaterials");
 
-            public static readonly int IntermediateVertexBuffer_AppendBuffer = Shader.PropertyToID("_IntermediateVertexBuffer");
-            public static readonly int IntermediateVertexBuffer_StructuredBuffer = Shader.PropertyToID("_IntermediateVertexBuffer_Structured");
+            public static readonly int IntermediateVertexBuffer_AppendBuffer =
+                Shader.PropertyToID("_IntermediateVertexBuffer");
+
+            public static readonly int IntermediateVertexBuffer_StructuredBuffer =
+                Shader.PropertyToID("_IntermediateVertexBuffer_Structured");
 
             public static readonly int ProceduralArgs_RWBuffer = Shader.PropertyToID("_ProceduralArgs");
         }
@@ -67,7 +79,9 @@ namespace IsoMesh
             private const string NumberVerticesKernelName = "Isosurface_NumberVertices";
             private const string GenerateTrianglesKernelName = "Isosurface_GenerateTriangles";
             public const string BuildIndexBufferKernelName = "Isosurface_BuildIndexBuffer";
-            private const string AddIntermediateVerticesToIndexBufferKernelName = "Isosurface_AddIntermediateVerticesToIndexBuffer";
+
+            private const string AddIntermediateVerticesToIndexBufferKernelName =
+                "Isosurface_AddIntermediateVerticesToIndexBuffer";
 
             public int Map { get; }
             public int GenerateVertices { get; }
@@ -83,7 +97,8 @@ namespace IsoMesh
                 NumberVertices = shader.FindKernel(NumberVerticesKernelName);
                 GenerateTriangles = shader.FindKernel(GenerateTrianglesKernelName);
                 BuildIndexBuffer = shader.FindKernel(BuildIndexBufferKernelName);
-                AddIntermediateVerticesToIndexBuffer = shader.FindKernel(AddIntermediateVerticesToIndexBufferKernelName);
+                AddIntermediateVerticesToIndexBuffer =
+                    shader.FindKernel(AddIntermediateVerticesToIndexBufferKernelName);
             }
         }
 
@@ -103,13 +118,17 @@ namespace IsoMesh
 
         private const string ComputeShaderResourceName = "Compute_IsoSurfaceExtraction";
 
+        private ComputeBuffer BoneSampleBuffer { get; set; }
+
         private ComputeBuffer m_samplesBuffer;
         private ComputeBuffer m_cellDataBuffer;
         private ComputeBuffer m_vertexDataBuffer;
         private ComputeBuffer m_triangleDataBuffer;
         private ComputeBuffer m_meshVerticesBuffer;
         private ComputeBuffer m_meshNormalsBuffer;
+
         private ComputeBuffer m_meshTrianglesBuffer;
+
         //private ComputeBuffer m_meshUVsBuffer;
         private ComputeBuffer m_meshVertexMaterialsBuffer;
         private ComputeBuffer m_meshVertexColoursBuffer;
@@ -118,7 +137,9 @@ namespace IsoMesh
         private ComputeBuffer m_proceduralArgsBuffer;
 
         private NativeArray<Vector3> m_nativeArrayVertices;
+
         private NativeArray<Vector3> m_nativeArrayNormals;
+
         //private NativeArray<Vector2> m_nativeArrayUVs;
         private NativeArray<Color> m_nativeArrayColours;
         private NativeArray<int> m_nativeArrayTriangles;
@@ -126,8 +147,8 @@ namespace IsoMesh
         private VertexData[] m_vertices;
         private TriangleData[] m_triangles;
 
-        [SerializeField]
-        private ComputeShader m_computeShader;
+        [SerializeField] private ComputeShader m_computeShader;
+
         private ComputeShader ComputeShader
         {
             get
@@ -138,7 +159,6 @@ namespace IsoMesh
                 Debug.Log("Attempting to load resource: " + ComputeShaderResourceName);
 
                 m_computeShader = Resources.Load<ComputeShader>(ComputeShaderResourceName);
-
                 if (!m_computeShader)
                     Debug.Log("Failed to load.");
                 else
@@ -150,8 +170,8 @@ namespace IsoMesh
 
         private ComputeShader m_computeShaderInstance;
 
-        [SerializeField]
-        private SDFGroup m_group;
+        [SerializeField] private SDFGroup m_group;
+
         public SDFGroup Group
         {
             get
@@ -166,16 +186,14 @@ namespace IsoMesh
                     return m_group;
 
                 return null;
-
             }
         }
 
-        [SerializeField]
-        [UnityEngine.Serialization.FormerlySerializedAs("m_meshGameObject")]
+        [SerializeField] [UnityEngine.Serialization.FormerlySerializedAs("m_meshGameObject")]
         private GameObject m_meshGameObject;
 
-        [SerializeField]
-        private MeshFilter m_meshFilter;
+        [SerializeField] private MeshFilter m_meshFilter;
+
         private MeshFilter MeshFilter
         {
             get
@@ -190,8 +208,8 @@ namespace IsoMesh
             }
         }
 
-        [SerializeField]
-        private MeshCollider m_meshCollider;
+        [SerializeField] private MeshCollider m_meshCollider;
+
         private MeshCollider MeshCollider
         {
             get
@@ -206,8 +224,8 @@ namespace IsoMesh
             }
         }
 
-        [SerializeField]
-        private Material m_proceduralMeshMaterial;
+        [SerializeField] private Material m_proceduralMeshMaterial;
+
         private Material ProceduralMeshMaterial
         {
             get
@@ -219,8 +237,8 @@ namespace IsoMesh
             }
         }
 
-        [SerializeField]
-        private MeshRenderer m_meshRenderer;
+        [SerializeField] private MeshRenderer m_meshRenderer;
+
         public MeshRenderer MeshRenderer
         {
             get
@@ -248,25 +266,23 @@ namespace IsoMesh
 
         private MaterialPropertyBlock m_propertyBlock;
 
-        [SerializeField]
-        private MainSettings m_mainSettings = new MainSettings();
+        [SerializeField] private MainSettings m_mainSettings = new MainSettings();
         public MainSettings MainSettings => m_mainSettings;
 
-        [SerializeField]
-        private VoxelSettings m_voxelSettings = new VoxelSettings();
+        [SerializeField] private VoxelSettings m_voxelSettings = new VoxelSettings();
         public VoxelSettings VoxelSettings => m_voxelSettings;
 
-        [SerializeField]
-        private AlgorithmSettings m_algorithmSettings = new AlgorithmSettings();
+        [SerializeField] private AlgorithmSettings m_algorithmSettings = new AlgorithmSettings();
         public AlgorithmSettings AlgorithmSettings => m_algorithmSettings;
 
         private bool m_initialized = false;
 
-        [SerializeField]
-        private bool m_showGrid = false;
+        [SerializeField] private bool m_showGrid = false;
         public bool ShowGrid => m_showGrid;
 
         private bool m_isEnabled = false;
+
+        private float[] _boneSamples;
 
         #endregion
 
@@ -280,6 +296,7 @@ namespace IsoMesh
 
         private void OnEnable()
         {
+            //boneSDF = Resources.Load<SDFMeshAsset>($"Data/SDFMeshes/SDFMesh_SM_YZ_L4_G_64");
             m_isEnabled = true;
             m_initialized = false;
 
@@ -320,7 +337,10 @@ namespace IsoMesh
 
         private void Update()
         {
-            if ((transform.hasChanged || (m_mainSettings.OutputMode == OutputMode.MeshFilter && TryGetOrCreateMeshGameObject(out GameObject meshGameObject) && meshGameObject.transform.hasChanged)) && Group.IsReady && !Group.IsEmpty && Group.IsRunning)
+            if ((transform.hasChanged || (m_mainSettings.OutputMode == OutputMode.MeshFilter &&
+                                          TryGetOrCreateMeshGameObject(out GameObject meshGameObject) &&
+                                          meshGameObject.transform.hasChanged)) && Group.IsReady && !Group.IsEmpty &&
+                Group.IsRunning)
             {
                 if (TryGetOrCreateMeshGameObject(out meshGameObject))
                     meshGameObject.transform.hasChanged = false;
@@ -340,8 +360,10 @@ namespace IsoMesh
             if (!m_initialized || !Group.IsReady || Group.IsEmpty)
                 return;
 
-            if (m_mainSettings.OutputMode == OutputMode.Procedural && m_mainSettings.ProceduralMaterial && m_proceduralArgsBuffer != null && m_proceduralArgsBuffer.IsValid() && m_mainSettings.AutoUpdate)
-                Graphics.DrawProceduralIndirect(m_mainSettings.ProceduralMaterial, m_bounds, MeshTopology.Triangles, m_proceduralArgsBuffer, properties: m_propertyBlock);
+            if (m_mainSettings.OutputMode == OutputMode.Procedural && m_mainSettings.ProceduralMaterial &&
+                m_proceduralArgsBuffer != null && m_proceduralArgsBuffer.IsValid() && m_mainSettings.AutoUpdate)
+                Graphics.DrawProceduralIndirect(m_mainSettings.ProceduralMaterial, m_bounds, MeshTopology.Triangles,
+                    m_proceduralArgsBuffer, properties: m_propertyBlock);
         }
 
         public void UpdateMesh()
@@ -367,7 +389,9 @@ namespace IsoMesh
             }
         }
 
-        private void ReallocateNativeArrays(int vertexCount, int triangleCount, ref NativeArray<Vector3> vertices, ref NativeArray<Vector3> normals, ref NativeArray<Color> colours/*, ref NativeArray<Vector2> uvs*/, ref NativeArray<int> indices)
+        private void ReallocateNativeArrays(int vertexCount, int triangleCount, ref NativeArray<Vector3> vertices,
+            ref NativeArray<Vector3> normals, ref NativeArray<Color> colours /*, ref NativeArray<Vector2> uvs*/,
+            ref NativeArray<int> indices)
         {
             // to avoid lots of allocations here, i only create new arrays when
             // 1) there's no array to begin with
@@ -398,7 +422,8 @@ namespace IsoMesh
             if (m_outputCounterNativeArray == null || !m_outputCounterNativeArray.IsCreated)
                 m_outputCounterNativeArray = new NativeArray<int>(m_counterBuffer.count, Allocator.Persistent);
 
-            AsyncGPUReadbackRequest counterRequest = AsyncGPUReadback.RequestIntoNativeArray(ref m_outputCounterNativeArray, m_counterBuffer);
+            AsyncGPUReadbackRequest counterRequest =
+                AsyncGPUReadback.RequestIntoNativeArray(ref m_outputCounterNativeArray, m_counterBuffer);
 
             if (counterRequest.hasError)
             {
@@ -418,18 +443,28 @@ namespace IsoMesh
 
             if (triangleCount > 0)
             {
-                ReallocateNativeArrays(vertexCount, triangleCount, ref m_nativeArrayVertices, ref m_nativeArrayNormals/*, ref m_nativeArrayUVs*/, ref m_nativeArrayColours, ref m_nativeArrayTriangles);
+                ReallocateNativeArrays(vertexCount, triangleCount, ref m_nativeArrayVertices,
+                    ref m_nativeArrayNormals /*, ref m_nativeArrayUVs*/, ref m_nativeArrayColours,
+                    ref m_nativeArrayTriangles);
 
-                int vertexRequestSize = Mathf.Min(m_nativeArrayVertices.Length, m_meshVerticesBuffer.count, vertexCount);
-                int triangleRequestSize = Mathf.Min(m_nativeArrayTriangles.Length, m_meshTrianglesBuffer.count, triangleCount * 3);
+                int vertexRequestSize =
+                    Mathf.Min(m_nativeArrayVertices.Length, m_meshVerticesBuffer.count, vertexCount);
+                int triangleRequestSize = Mathf.Min(m_nativeArrayTriangles.Length, m_meshTrianglesBuffer.count,
+                    triangleCount * 3);
 
-                AsyncGPUReadbackRequest vertexRequest = AsyncGPUReadback.RequestIntoNativeArray(ref m_nativeArrayVertices, m_meshVerticesBuffer, vertexRequestSize * sizeof(float) * 3, 0);
-                AsyncGPUReadbackRequest normalRequest = AsyncGPUReadback.RequestIntoNativeArray(ref m_nativeArrayNormals, m_meshNormalsBuffer, vertexRequestSize * sizeof(float) * 3, 0);
+                AsyncGPUReadbackRequest vertexRequest = AsyncGPUReadback.RequestIntoNativeArray(
+                    ref m_nativeArrayVertices, m_meshVerticesBuffer, vertexRequestSize * sizeof(float) * 3, 0);
+                AsyncGPUReadbackRequest normalRequest = AsyncGPUReadback.RequestIntoNativeArray(
+                    ref m_nativeArrayNormals, m_meshNormalsBuffer, vertexRequestSize * sizeof(float) * 3, 0);
                 //AsyncGPUReadbackRequest uvRequest = AsyncGPUReadback.RequestIntoNativeArray(ref m_nativeArrayUVs, m_meshUVsBuffer, vertexRequestSize * sizeof(float) * 2, 0);
-                AsyncGPUReadbackRequest colourRequest = AsyncGPUReadback.RequestIntoNativeArray(ref m_nativeArrayColours, m_meshVertexColoursBuffer, vertexRequestSize * sizeof(float) * 4, 0);
-                AsyncGPUReadbackRequest triangleRequest = AsyncGPUReadback.RequestIntoNativeArray(ref m_nativeArrayTriangles, m_meshTrianglesBuffer, triangleRequestSize * sizeof(int), 0);
+                AsyncGPUReadbackRequest colourRequest = AsyncGPUReadback.RequestIntoNativeArray(
+                    ref m_nativeArrayColours, m_meshVertexColoursBuffer, vertexRequestSize * sizeof(float) * 4, 0);
+                AsyncGPUReadbackRequest triangleRequest =
+                    AsyncGPUReadback.RequestIntoNativeArray(ref m_nativeArrayTriangles, m_meshTrianglesBuffer,
+                        triangleRequestSize * sizeof(int), 0);
 
-                if (vertexRequest.hasError || normalRequest.hasError || colourRequest.hasError || triangleRequest.hasError)
+                if (vertexRequest.hasError || normalRequest.hasError || colourRequest.hasError ||
+                    triangleRequest.hasError)
                 {
                     Debug.LogError("AsyncGPUReadbackRequest encountered an error.");
                     return;
@@ -437,13 +472,15 @@ namespace IsoMesh
 
                 AsyncGPUReadback.WaitAllRequests();
 
-                if (vertexRequest.hasError || normalRequest.hasError || colourRequest.hasError || triangleRequest.hasError)
+                if (vertexRequest.hasError || normalRequest.hasError || colourRequest.hasError ||
+                    triangleRequest.hasError)
                 {
                     Debug.LogError("AsyncGPUReadbackRequest encountered an error.");
                     return;
                 }
 
-                SetMeshData(m_nativeArrayVertices, m_nativeArrayNormals/*, m_nativeArrayUVs*/, m_nativeArrayColours, m_nativeArrayTriangles, vertexCount, triangleCount);
+                SetMeshData(m_nativeArrayVertices, m_nativeArrayNormals /*, m_nativeArrayUVs*/, m_nativeArrayColours,
+                    m_nativeArrayTriangles, vertexCount, triangleCount);
             }
             else
             {
@@ -472,7 +509,8 @@ namespace IsoMesh
             if (m_outputCounterNativeArray == null || !m_outputCounterNativeArray.IsCreated)
                 m_outputCounterNativeArray = new NativeArray<int>(m_counterBuffer.count, Allocator.Persistent);
 
-            AsyncGPUReadbackRequest counterRequest = AsyncGPUReadback.RequestIntoNativeArray(ref m_outputCounterNativeArray, m_counterBuffer);
+            AsyncGPUReadbackRequest counterRequest =
+                AsyncGPUReadback.RequestIntoNativeArray(ref m_outputCounterNativeArray, m_counterBuffer);
 
             while (!counterRequest.done)
                 yield return null;
@@ -481,21 +519,31 @@ namespace IsoMesh
 
             if (triangleCount > 0)
             {
-                ReallocateNativeArrays(vertexCount, triangleCount, ref m_nativeArrayVertices, ref m_nativeArrayNormals, ref m_nativeArrayColours/*m_nativeArrayUVs*/, ref m_nativeArrayTriangles);
+                ReallocateNativeArrays(vertexCount, triangleCount, ref m_nativeArrayVertices, ref m_nativeArrayNormals,
+                    ref m_nativeArrayColours /*m_nativeArrayUVs*/, ref m_nativeArrayTriangles);
 
-                int vertexRequestSize = Mathf.Min(m_nativeArrayVertices.Length, m_meshVerticesBuffer.count, vertexCount);
-                int triangleRequestSize = Mathf.Min(m_nativeArrayTriangles.Length, m_meshTrianglesBuffer.count, triangleCount * 3);
+                int vertexRequestSize =
+                    Mathf.Min(m_nativeArrayVertices.Length, m_meshVerticesBuffer.count, vertexCount);
+                int triangleRequestSize = Mathf.Min(m_nativeArrayTriangles.Length, m_meshTrianglesBuffer.count,
+                    triangleCount * 3);
 
-                AsyncGPUReadbackRequest vertexRequest = AsyncGPUReadback.RequestIntoNativeArray(ref m_nativeArrayVertices, m_meshVerticesBuffer, vertexRequestSize * sizeof(float) * 3, 0);
-                AsyncGPUReadbackRequest normalRequest = AsyncGPUReadback.RequestIntoNativeArray(ref m_nativeArrayNormals, m_meshNormalsBuffer, vertexRequestSize * sizeof(float) * 3, 0);
+                AsyncGPUReadbackRequest vertexRequest = AsyncGPUReadback.RequestIntoNativeArray(
+                    ref m_nativeArrayVertices, m_meshVerticesBuffer, vertexRequestSize * sizeof(float) * 3, 0);
+                AsyncGPUReadbackRequest normalRequest = AsyncGPUReadback.RequestIntoNativeArray(
+                    ref m_nativeArrayNormals, m_meshNormalsBuffer, vertexRequestSize * sizeof(float) * 3, 0);
                 //AsyncGPUReadbackRequest uvRequest = AsyncGPUReadback.RequestIntoNativeArray(ref m_nativeArrayUVs, m_meshUVsBuffer, vertexRequestSize * sizeof(float) * 2, 0);
-                AsyncGPUReadbackRequest colourRequest = AsyncGPUReadback.RequestIntoNativeArray(ref m_nativeArrayColours, m_meshVertexColoursBuffer, vertexRequestSize * sizeof(float) * 4, 0);
-                AsyncGPUReadbackRequest triangleRequest = AsyncGPUReadback.RequestIntoNativeArray(ref m_nativeArrayTriangles, m_meshTrianglesBuffer, triangleRequestSize * sizeof(int), 0);
+                AsyncGPUReadbackRequest colourRequest = AsyncGPUReadback.RequestIntoNativeArray(
+                    ref m_nativeArrayColours, m_meshVertexColoursBuffer, vertexRequestSize * sizeof(float) * 4, 0);
+                AsyncGPUReadbackRequest triangleRequest =
+                    AsyncGPUReadback.RequestIntoNativeArray(ref m_nativeArrayTriangles, m_meshTrianglesBuffer,
+                        triangleRequestSize * sizeof(int), 0);
 
-                while (!vertexRequest.done && !normalRequest.done && !colourRequest.done/*!uvRequest.done*/ && !triangleRequest.done)
+                while (!vertexRequest.done && !normalRequest.done && !colourRequest.done /*!uvRequest.done*/ &&
+                       !triangleRequest.done)
                     yield return null;
 
-                SetMeshData(m_nativeArrayVertices, m_nativeArrayNormals, m_nativeArrayColours/*m_nativeArrayUVs*/, m_nativeArrayTriangles, vertexCount, triangleCount);
+                SetMeshData(m_nativeArrayVertices, m_nativeArrayNormals, m_nativeArrayColours /*m_nativeArrayUVs*/,
+                    m_nativeArrayTriangles, vertexCount, triangleCount);
             }
             else
             {
@@ -509,7 +557,9 @@ namespace IsoMesh
             m_isCoroutineRunning = false;
         }
 
-        private void SetMeshData(NativeArray<Vector3> vertices, NativeArray<Vector3> normals/*, NativeArray<Vector2> uvs*/, NativeArray<Color> colours, NativeArray<int> indices, int vertexCount, int triangleCount)
+        private void SetMeshData(NativeArray<Vector3> vertices,
+            NativeArray<Vector3> normals /*, NativeArray<Vector2> uvs*/, NativeArray<Color> colours,
+            NativeArray<int> indices, int vertexCount, int triangleCount)
         {
             if (MeshRenderer)
                 MeshRenderer.enabled = true;
@@ -596,28 +646,33 @@ namespace IsoMesh
                 return;
 
             ReleaseUnmanagedMemory();
-            
+
             m_isInitializing = true;
             m_initialized = true;
 
             m_computeShaderInstance = Instantiate(ComputeShader);
 
             SendTransformToGPU();
-            
+
             m_kernels = new Kernels(ComputeShader);
 
             // counter buffer has 18 integers: [vertex count, 1, 1, triangle count, 1, 1, vertex count / 64, 1, 1, triangle count / 64, 1, 1, intermediate vertex count, 1, 1, intermediate vertex count / 64, 1, 1]
-            m_counterBuffer = new ComputeBuffer(m_counterArray.Length, sizeof(int), ComputeBufferType.IndirectArguments);
-            m_proceduralArgsBuffer = new ComputeBuffer(m_proceduralArgsArray.Length, sizeof(int), ComputeBufferType.IndirectArguments);
+            m_counterBuffer =
+                new ComputeBuffer(m_counterArray.Length, sizeof(int), ComputeBufferType.IndirectArguments);
+            m_proceduralArgsBuffer = new ComputeBuffer(m_proceduralArgsArray.Length, sizeof(int),
+                ComputeBufferType.IndirectArguments);
 
             m_computeShaderInstance.SetBuffer(m_kernels.NumberVertices, Properties.Counter_RWBuffer, m_counterBuffer);
-            m_computeShaderInstance.SetBuffer(m_kernels.GenerateTriangles, Properties.Counter_RWBuffer, m_counterBuffer);
+            m_computeShaderInstance.SetBuffer(m_kernels.GenerateTriangles, Properties.Counter_RWBuffer,
+                m_counterBuffer);
             m_computeShaderInstance.SetBuffer(m_kernels.GenerateVertices, Properties.Counter_RWBuffer, m_counterBuffer);
             m_computeShaderInstance.SetBuffer(m_kernels.NumberVertices, Properties.Counter_RWBuffer, m_counterBuffer);
             m_computeShaderInstance.SetBuffer(m_kernels.BuildIndexBuffer, Properties.Counter_RWBuffer, m_counterBuffer);
-            m_computeShaderInstance.SetBuffer(m_kernels.AddIntermediateVerticesToIndexBuffer, Properties.Counter_RWBuffer, m_counterBuffer);
+            m_computeShaderInstance.SetBuffer(m_kernels.AddIntermediateVerticesToIndexBuffer,
+                Properties.Counter_RWBuffer, m_counterBuffer);
 
-            m_computeShaderInstance.SetBuffer(m_kernels.GenerateTriangles, Properties.ProceduralArgs_RWBuffer, m_proceduralArgsBuffer);
+            m_computeShaderInstance.SetBuffer(m_kernels.GenerateTriangles, Properties.ProceduralArgs_RWBuffer,
+                m_proceduralArgsBuffer);
 
             CreateVariableBuffers();
 
@@ -661,8 +716,9 @@ namespace IsoMesh
             m_meshVertexMaterialsBuffer?.Dispose();
 
             m_intermediateVertexBuffer?.Dispose();
-
+            _boneSamples = new float[countCubed];
             m_samplesBuffer = new ComputeBuffer(countCubed, sizeof(float), ComputeBufferType.Structured);
+            BoneSampleBuffer = new ComputeBuffer(countCubed, sizeof(float), ComputeBufferType.Structured);
             m_cellDataBuffer = new ComputeBuffer(countCubed, CellData.Stride, ComputeBufferType.Structured);
             m_vertexDataBuffer = new ComputeBuffer(countCubed, VertexData.Stride, ComputeBufferType.Append);
             m_triangleDataBuffer = new ComputeBuffer(countCubed, TriangleData.Stride, ComputeBufferType.Append);
@@ -671,10 +727,13 @@ namespace IsoMesh
             m_meshNormalsBuffer = new ComputeBuffer(countCubed * 3, sizeof(float) * 3, ComputeBufferType.Structured);
             m_meshTrianglesBuffer = new ComputeBuffer(countCubed * 3, sizeof(int), ComputeBufferType.Structured);
             //m_meshUVsBuffer = new ComputeBuffer(countCubed * 3, sizeof(float) * 2, ComputeBufferType.Structured);
-            m_meshVertexColoursBuffer = new ComputeBuffer(countCubed * 3, sizeof(float) * 4, ComputeBufferType.Structured);
-            m_meshVertexMaterialsBuffer = new ComputeBuffer(countCubed * 3, SDFMaterialGPU.Stride, ComputeBufferType.Structured);
+            m_meshVertexColoursBuffer =
+                new ComputeBuffer(countCubed * 3, sizeof(float) * 4, ComputeBufferType.Structured);
+            m_meshVertexMaterialsBuffer =
+                new ComputeBuffer(countCubed * 3, SDFMaterialGPU.Stride, ComputeBufferType.Structured);
 
-            m_intermediateVertexBuffer = new ComputeBuffer(countCubed * 3, NewVertexData.Stride, ComputeBufferType.Append);
+            m_intermediateVertexBuffer =
+                new ComputeBuffer(countCubed * 3, NewVertexData.Stride, ComputeBufferType.Append);
 
             if (m_mainSettings.ProceduralMaterial)
             {
@@ -689,29 +748,44 @@ namespace IsoMesh
             }
 
             UpdateMapKernels(Properties.Samples_RWBuffer, m_samplesBuffer);
-
-            m_computeShaderInstance.SetBuffer(m_kernels.GenerateVertices, Properties.CellData_RWBuffer, m_cellDataBuffer);
+            m_computeShaderInstance.SetBuffer(m_kernels.GenerateVertices, Properties.CellData_RWBuffer,
+                m_cellDataBuffer);
             m_computeShaderInstance.SetBuffer(m_kernels.NumberVertices, Properties.CellData_RWBuffer, m_cellDataBuffer);
-            m_computeShaderInstance.SetBuffer(m_kernels.GenerateTriangles, Properties.CellData_RWBuffer, m_cellDataBuffer);
+            m_computeShaderInstance.SetBuffer(m_kernels.GenerateTriangles, Properties.CellData_RWBuffer,
+                m_cellDataBuffer);
 
-            m_computeShaderInstance.SetBuffer(m_kernels.GenerateTriangles, Properties.MeshVertices_RWBuffer, m_meshVerticesBuffer);
-            m_computeShaderInstance.SetBuffer(m_kernels.GenerateTriangles, Properties.MeshNormals_RWBuffer, m_meshNormalsBuffer);
-            m_computeShaderInstance.SetBuffer(m_kernels.GenerateTriangles, Properties.MeshTriangles_RWBuffer, m_meshTrianglesBuffer);
+            m_computeShaderInstance.SetBuffer(m_kernels.GenerateTriangles, Properties.MeshVertices_RWBuffer,
+                m_meshVerticesBuffer);
+            m_computeShaderInstance.SetBuffer(m_kernels.GenerateTriangles, Properties.MeshNormals_RWBuffer,
+                m_meshNormalsBuffer);
+            m_computeShaderInstance.SetBuffer(m_kernels.GenerateTriangles, Properties.MeshTriangles_RWBuffer,
+                m_meshTrianglesBuffer);
             //m_computeShaderInstance.SetBuffer(m_kernels.GenerateTriangles, Properties.MeshUVs_RWBuffer, m_meshUVsBuffer);
-            m_computeShaderInstance.SetBuffer(m_kernels.GenerateTriangles, Properties.MeshVertexMaterials_RWBuffer, m_meshVertexMaterialsBuffer);
+            m_computeShaderInstance.SetBuffer(m_kernels.GenerateTriangles, Properties.MeshVertexMaterials_RWBuffer,
+                m_meshVertexMaterialsBuffer);
 
-            m_computeShaderInstance.SetBuffer(m_kernels.BuildIndexBuffer, Properties.MeshTriangles_RWBuffer, m_meshTrianglesBuffer);
-            m_computeShaderInstance.SetBuffer(m_kernels.BuildIndexBuffer, Properties.IntermediateVertexBuffer_AppendBuffer, m_intermediateVertexBuffer);
-            m_computeShaderInstance.SetBuffer(m_kernels.BuildIndexBuffer, Properties.MeshVertexColours_RWBuffer, m_meshVertexColoursBuffer);
-            m_computeShaderInstance.SetBuffer(m_kernels.BuildIndexBuffer, Properties.MeshVertexMaterials_RWBuffer, m_meshVertexMaterialsBuffer);
+            m_computeShaderInstance.SetBuffer(m_kernels.BuildIndexBuffer, Properties.MeshTriangles_RWBuffer,
+                m_meshTrianglesBuffer);
+            m_computeShaderInstance.SetBuffer(m_kernels.BuildIndexBuffer,
+                Properties.IntermediateVertexBuffer_AppendBuffer, m_intermediateVertexBuffer);
+            m_computeShaderInstance.SetBuffer(m_kernels.BuildIndexBuffer, Properties.MeshVertexColours_RWBuffer,
+                m_meshVertexColoursBuffer);
+            m_computeShaderInstance.SetBuffer(m_kernels.BuildIndexBuffer, Properties.MeshVertexMaterials_RWBuffer,
+                m_meshVertexMaterialsBuffer);
 
-            m_computeShaderInstance.SetBuffer(m_kernels.AddIntermediateVerticesToIndexBuffer, Properties.MeshVertices_RWBuffer, m_meshVerticesBuffer);
-            m_computeShaderInstance.SetBuffer(m_kernels.AddIntermediateVerticesToIndexBuffer, Properties.MeshNormals_RWBuffer, m_meshNormalsBuffer);
-            m_computeShaderInstance.SetBuffer(m_kernels.AddIntermediateVerticesToIndexBuffer, Properties.MeshTriangles_RWBuffer, m_meshTrianglesBuffer);
-            m_computeShaderInstance.SetBuffer(m_kernels.AddIntermediateVerticesToIndexBuffer, Properties.MeshVertexMaterials_RWBuffer, m_meshVertexMaterialsBuffer);
+            m_computeShaderInstance.SetBuffer(m_kernels.AddIntermediateVerticesToIndexBuffer,
+                Properties.MeshVertices_RWBuffer, m_meshVerticesBuffer);
+            m_computeShaderInstance.SetBuffer(m_kernels.AddIntermediateVerticesToIndexBuffer,
+                Properties.MeshNormals_RWBuffer, m_meshNormalsBuffer);
+            m_computeShaderInstance.SetBuffer(m_kernels.AddIntermediateVerticesToIndexBuffer,
+                Properties.MeshTriangles_RWBuffer, m_meshTrianglesBuffer);
+            m_computeShaderInstance.SetBuffer(m_kernels.AddIntermediateVerticesToIndexBuffer,
+                Properties.MeshVertexMaterials_RWBuffer, m_meshVertexMaterialsBuffer);
             //m_computeShaderInstance.SetBuffer(m_kernels.AddIntermediateVerticesToIndexBuffer, Properties.MeshUVs_RWBuffer, m_meshUVsBuffer);
-            m_computeShaderInstance.SetBuffer(m_kernels.AddIntermediateVerticesToIndexBuffer, Properties.IntermediateVertexBuffer_StructuredBuffer, m_intermediateVertexBuffer);
-            m_computeShaderInstance.SetBuffer(m_kernels.AddIntermediateVerticesToIndexBuffer, Properties.MeshVertexColours_RWBuffer, m_meshVertexColoursBuffer);
+            m_computeShaderInstance.SetBuffer(m_kernels.AddIntermediateVerticesToIndexBuffer,
+                Properties.IntermediateVertexBuffer_StructuredBuffer, m_intermediateVertexBuffer);
+            m_computeShaderInstance.SetBuffer(m_kernels.AddIntermediateVerticesToIndexBuffer,
+                Properties.MeshVertexColours_RWBuffer, m_meshVertexColoursBuffer);
 
             m_bounds = new Bounds { extents = m_voxelSettings.Extents };
 
@@ -797,10 +871,14 @@ namespace IsoMesh
         private void SetVertexData()
         {
             m_vertexDataBuffer.SetData(m_vertices);
-            m_computeShaderInstance.SetBuffer(m_kernels.GenerateVertices, Properties.VertexData_AppendBuffer, m_vertexDataBuffer);
-            m_computeShaderInstance.SetBuffer(m_kernels.NumberVertices, Properties.VertexData_StructuredBuffer, m_vertexDataBuffer);
-            m_computeShaderInstance.SetBuffer(m_kernels.GenerateTriangles, Properties.VertexData_StructuredBuffer, m_vertexDataBuffer);
-            m_computeShaderInstance.SetBuffer(m_kernels.BuildIndexBuffer, Properties.VertexData_StructuredBuffer, m_vertexDataBuffer);
+            m_computeShaderInstance.SetBuffer(m_kernels.GenerateVertices, Properties.VertexData_AppendBuffer,
+                m_vertexDataBuffer);
+            m_computeShaderInstance.SetBuffer(m_kernels.NumberVertices, Properties.VertexData_StructuredBuffer,
+                m_vertexDataBuffer);
+            m_computeShaderInstance.SetBuffer(m_kernels.GenerateTriangles, Properties.VertexData_StructuredBuffer,
+                m_vertexDataBuffer);
+            m_computeShaderInstance.SetBuffer(m_kernels.BuildIndexBuffer, Properties.VertexData_StructuredBuffer,
+                m_vertexDataBuffer);
         }
 
         /// <summary>
@@ -809,8 +887,10 @@ namespace IsoMesh
         private void SetTriangleData()
         {
             m_triangleDataBuffer.SetData(m_triangles);
-            m_computeShaderInstance.SetBuffer(m_kernels.GenerateTriangles, Properties.TriangleData_AppendBuffer, m_triangleDataBuffer);
-            m_computeShaderInstance.SetBuffer(m_kernels.BuildIndexBuffer, Properties.TriangleData_StructuredBuffer, m_triangleDataBuffer);
+            m_computeShaderInstance.SetBuffer(m_kernels.GenerateTriangles, Properties.TriangleData_AppendBuffer,
+                m_triangleDataBuffer);
+            m_computeShaderInstance.SetBuffer(m_kernels.BuildIndexBuffer, Properties.TriangleData_StructuredBuffer,
+                m_triangleDataBuffer);
         }
 
         public void Run()
@@ -827,7 +907,7 @@ namespace IsoMesh
                 UpdateMesh();
             }
         }
-        
+
         /// <summary>
         /// Dispatch all the compute kernels in the correct order. Basically... do the thing.
         /// </summary>
@@ -871,37 +951,52 @@ namespace IsoMesh
             UpdateMapKernels(Properties.Settings_StructuredBuffer, Group.SettingsBuffer);
 
             m_computeShaderInstance.GetKernelThreadGroupSizes(m_kernels.Map, out uint x, out uint y, out uint z);
-            m_computeShaderInstance.Dispatch(m_kernels.Map, Mathf.CeilToInt(m_voxelSettings.SamplesPerSide / (float)x), Mathf.CeilToInt(m_voxelSettings.SamplesPerSide / (float)y), Mathf.CeilToInt(m_voxelSettings.SamplesPerSide / (float)z));
+            m_computeShaderInstance.Dispatch(m_kernels.Map, Mathf.CeilToInt(m_voxelSettings.SamplesPerSide / (float)x),
+                Mathf.CeilToInt(m_voxelSettings.SamplesPerSide / (float)y),
+                Mathf.CeilToInt(m_voxelSettings.SamplesPerSide / (float)z));
+           
+            // TODO:give bone samples to bone's sample
+            m_samplesBuffer.GetData(_boneSamples);
+            
+            //SDFGroup.BoneSDF.Samples = _boneSamples;
         }
 
         private void DispatchGenerateVertices()
         {
-            m_computeShaderInstance.GetKernelThreadGroupSizes(m_kernels.GenerateVertices, out uint x, out uint y, out uint z);
-            m_computeShaderInstance.Dispatch(m_kernels.GenerateVertices, Mathf.CeilToInt(m_voxelSettings.SamplesPerSide / (float)x), Mathf.CeilToInt(m_voxelSettings.SamplesPerSide / (float)y), Mathf.CeilToInt(m_voxelSettings.SamplesPerSide / (float)z));
+            m_computeShaderInstance.GetKernelThreadGroupSizes(m_kernels.GenerateVertices, out uint x, out uint y,
+                out uint z);
+            m_computeShaderInstance.Dispatch(m_kernels.GenerateVertices,
+                Mathf.CeilToInt(m_voxelSettings.SamplesPerSide / (float)x),
+                Mathf.CeilToInt(m_voxelSettings.SamplesPerSide / (float)y),
+                Mathf.CeilToInt(m_voxelSettings.SamplesPerSide / (float)z));
         }
 
         private void DispatchNumberVertices()
         {
             // counter buffer has 18 integers: [vertex count, 1, 1, triangle count, 1, 1, vertex count / 64, 1, 1, triangle count / 64, 1, 1, intermediate vertex count, 1, 1, intermediate vertex count / 64, 1, 1]
-            m_computeShaderInstance.DispatchIndirect(m_kernels.NumberVertices, m_counterBuffer, VERTEX_COUNTER_DIV_64 * sizeof(int));
+            m_computeShaderInstance.DispatchIndirect(m_kernels.NumberVertices, m_counterBuffer,
+                VERTEX_COUNTER_DIV_64 * sizeof(int));
         }
 
         private void DispatchGenerateTriangles()
         {
             // counter buffer has 18 integers: [vertex count, 1, 1, triangle count, 1, 1, vertex count / 64, 1, 1, triangle count / 64, 1, 1, intermediate vertex count, 1, 1, intermediate vertex count / 64, 1, 1]
-            m_computeShaderInstance.DispatchIndirect(m_kernels.GenerateTriangles, m_counterBuffer, VERTEX_COUNTER_DIV_64 * sizeof(int));
+            m_computeShaderInstance.DispatchIndirect(m_kernels.GenerateTriangles, m_counterBuffer,
+                VERTEX_COUNTER_DIV_64 * sizeof(int));
         }
 
         private void DispatchBuildIndexBuffer()
         {
             // counter buffer has 18 integers: [vertex count, 1, 1, triangle count, 1, 1, vertex count / 64, 1, 1, triangle count / 64, 1, 1, intermediate vertex count, 1, 1, intermediate vertex count / 64, 1, 1]
-            m_computeShaderInstance.DispatchIndirect(m_kernels.BuildIndexBuffer, m_counterBuffer, TRIANGLE_COUNTER_DIV_64 * sizeof(int));
+            m_computeShaderInstance.DispatchIndirect(m_kernels.BuildIndexBuffer, m_counterBuffer,
+                TRIANGLE_COUNTER_DIV_64 * sizeof(int));
         }
 
         private void DispatchAddIntermediateVerticesToIndexBuffer()
         {
             // counter buffer has 18 integers: [vertex count, 1, 1, triangle count, 1, 1, vertex count / 64, 1, 1, triangle count / 64, 1, 1, intermediate vertex count, 1, 1, intermediate vertex count / 64, 1, 1]
-            m_computeShaderInstance.DispatchIndirect(m_kernels.AddIntermediateVerticesToIndexBuffer, m_counterBuffer, INTERMEDIATE_VERTEX_COUNTER_DIV_64 * sizeof(int));
+            m_computeShaderInstance.DispatchIndirect(m_kernels.AddIntermediateVerticesToIndexBuffer, m_counterBuffer,
+                INTERMEDIATE_VERTEX_COUNTER_DIV_64 * sizeof(int));
         }
 
         private void SendTransformToGPU()
@@ -911,8 +1006,10 @@ namespace IsoMesh
 
             m_computeShaderInstance.SetMatrix(Properties.Transform_Matrix4x4, transform.localToWorldMatrix);
 
-            if (m_mainSettings.OutputMode == OutputMode.MeshFilter && TryGetOrCreateMeshGameObject(out GameObject meshGameObject))
-                m_computeShaderInstance.SetMatrix(Properties.MeshTransform_Matrix4x4, meshGameObject.transform.worldToLocalMatrix);
+            if (m_mainSettings.OutputMode == OutputMode.MeshFilter &&
+                TryGetOrCreateMeshGameObject(out GameObject meshGameObject))
+                m_computeShaderInstance.SetMatrix(Properties.MeshTransform_Matrix4x4,
+                    meshGameObject.transform.worldToLocalMatrix);
             else if (m_mainSettings.OutputMode == OutputMode.Procedural)
                 m_computeShaderInstance.SetMatrix(Properties.MeshTransform_Matrix4x4, Matrix4x4.identity);
         }
@@ -948,7 +1045,7 @@ namespace IsoMesh
         {
             m_isInitializing = true;
             m_algorithmSettings.CopySettings(algorithmSettings);
-            
+
             OnVisualNormalSmoothingChanged();
             OnMaxAngleToleranceChanged();
             OnGradientDescentIterationsChanged();
@@ -987,13 +1084,14 @@ namespace IsoMesh
             if (m_mainSettings.AutoUpdate && !m_isInitializing)
                 UpdateMesh();
         }
-        
+
         public void OnVisualNormalSmoothingChanged()
         {
             if (!m_initialized || !m_isEnabled)
                 return;
 
-            m_computeShaderInstance.SetFloat(Properties.VisualNormalSmoothing, m_algorithmSettings.VisualNormalSmoothing);
+            m_computeShaderInstance.SetFloat(Properties.VisualNormalSmoothing,
+                m_algorithmSettings.VisualNormalSmoothing);
 
             if (m_mainSettings.AutoUpdate && !m_isInitializing)
                 UpdateMesh();
@@ -1004,7 +1102,8 @@ namespace IsoMesh
             if (!m_initialized || !m_isEnabled)
                 return;
 
-            m_computeShaderInstance.SetFloat(Properties.MaxAngleCosine_Float, Mathf.Cos(m_algorithmSettings.MaxAngleTolerance * Mathf.Deg2Rad));
+            m_computeShaderInstance.SetFloat(Properties.MaxAngleCosine_Float,
+                Mathf.Cos(m_algorithmSettings.MaxAngleTolerance * Mathf.Deg2Rad));
 
             if (m_mainSettings.AutoUpdate && !m_isInitializing)
                 UpdateMesh();
@@ -1014,8 +1113,9 @@ namespace IsoMesh
         {
             if (!m_initialized || !m_isEnabled)
                 return;
-            
-            m_computeShaderInstance.SetInt(Properties.GradientDescentIterations_Int, m_algorithmSettings.GradientDescentIterations);
+
+            m_computeShaderInstance.SetInt(Properties.GradientDescentIterations_Int,
+                m_algorithmSettings.GradientDescentIterations);
 
             if (m_mainSettings.AutoUpdate && !m_isInitializing)
                 UpdateMesh();
@@ -1026,7 +1126,8 @@ namespace IsoMesh
             if (!m_initialized || !m_isEnabled)
                 return;
 
-            m_computeShaderInstance.SetInt(Properties.BinarySearchIterations_Int, m_algorithmSettings.BinarySearchIterations);
+            m_computeShaderInstance.SetInt(Properties.BinarySearchIterations_Int,
+                m_algorithmSettings.BinarySearchIterations);
 
             if (m_mainSettings.AutoUpdate && !m_isInitializing)
                 UpdateMesh();
@@ -1037,12 +1138,13 @@ namespace IsoMesh
             if (!m_initialized || !m_isEnabled)
                 return;
 
-            m_computeShaderInstance.SetInt(Properties.IsosurfaceExtractionType_Int, (int)m_algorithmSettings.IsosurfaceExtractionType);
+            m_computeShaderInstance.SetInt(Properties.IsosurfaceExtractionType_Int,
+                (int)m_algorithmSettings.IsosurfaceExtractionType);
 
             if (m_mainSettings.AutoUpdate && !m_isInitializing)
                 UpdateMesh();
         }
-        
+
         public void OnOutputModeChanged()
         {
             if (TryGetOrCreateMeshGameObject(out GameObject meshGameObject))
@@ -1158,7 +1260,8 @@ namespace IsoMesh
         }
 
         public int CellCoordinateToIndex(int x, int y, int z) =>
-            (x + y * m_voxelSettings.SamplesPerSide + z * m_voxelSettings.SamplesPerSide * m_voxelSettings.SamplesPerSide);
+            (x + y * m_voxelSettings.SamplesPerSide +
+             z * m_voxelSettings.SamplesPerSide * m_voxelSettings.SamplesPerSide);
 
         public int CellCoordinateToIndex(Vector3Int vec) =>
             CellCoordinateToIndex(vec.x, vec.y, vec.z);
@@ -1167,13 +1270,14 @@ namespace IsoMesh
 
         #region Chunk + Editor Methods
 
-        [SerializeField]
-        private bool m_settingsControlledByGrid = false;
+        [SerializeField] private bool m_settingsControlledByGrid = false;
 
         public void SetSettingsControlledByGrid(bool settingsControlledByGrid) =>
             m_settingsControlledByGrid = settingsControlledByGrid;
 
-        public static void CloneSettings(SDFGroupMeshGenerator target, Transform parent, SDFGroup group, MainSettings mainSettings, AlgorithmSettings algorithmSettings, VoxelSettings voxelSettings, bool addMeshRenderer = false, bool addMeshCollider = false, Material meshRendererMaterial = null)
+        public static void CloneSettings(SDFGroupMeshGenerator target, Transform parent, SDFGroup group,
+            MainSettings mainSettings, AlgorithmSettings algorithmSettings, VoxelSettings voxelSettings,
+            bool addMeshRenderer = false, bool addMeshCollider = false, Material meshRendererMaterial = null)
         {
             target.TryGetOrCreateMeshGameObject(out GameObject meshGameObject);
 
@@ -1211,7 +1315,10 @@ namespace IsoMesh
 
             public bool HasSurfacePoint => VertexID >= 0;
 
-            public override string ToString() => $"HasSurfacePoint = {HasSurfacePoint}" + (HasSurfacePoint ? $", SurfacePoint = {SurfacePoint}, VertexID = {VertexID}" : "");
+            public override string ToString() => $"HasSurfacePoint = {HasSurfacePoint}" +
+                                                 (HasSurfacePoint
+                                                     ? $", SurfacePoint = {SurfacePoint}, VertexID = {VertexID}"
+                                                     : "");
         };
 
         [StructLayout(LayoutKind.Sequential)]
@@ -1225,7 +1332,8 @@ namespace IsoMesh
             public Vector3 Vertex;
             public Vector3 Normal;
 
-            public override string ToString() => $"Index = {Index}, CellID = {CellID}, Vertex = {Vertex}, Normal = {Normal}";
+            public override string ToString() =>
+                $"Index = {Index}, CellID = {CellID}, Vertex = {Vertex}, Normal = {Normal}";
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -1255,12 +1363,33 @@ namespace IsoMesh
         }
 
         #endregion
-
     }
 
-    public enum IsosurfaceExtractionType { SurfaceNets, DualContouring };
-    public enum EdgeIntersectionType { Interpolation, BinarySearch };
+    #region Enum
 
-    public enum CellSizeMode { Fixed, Density };
-    public enum OutputMode { MeshFilter, Procedural };
+    public enum IsosurfaceExtractionType
+    {
+        SurfaceNets,
+        DualContouring
+    };
+
+    public enum EdgeIntersectionType
+    {
+        Interpolation,
+        BinarySearch
+    };
+
+    public enum CellSizeMode
+    {
+        Fixed,
+        Density
+    };
+
+    public enum OutputMode
+    {
+        MeshFilter,
+        Procedural
+    };
+
+    #endregion
 }

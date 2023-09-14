@@ -11,6 +11,7 @@ MonoImporter:
   - m_meshCollider: {instanceID: 0}
   - m_proceduralMeshMaterial: {fileID: 2100000, guid: 0de64f367f4df4247a146598773e4aad, type: 2}
   - m_meshRenderer: {instanceID: 0}
+  - boneSDF: {fileID: 11400000, guid: 048f821f6102c3a45a2415385fd3862b, type: 2}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 
