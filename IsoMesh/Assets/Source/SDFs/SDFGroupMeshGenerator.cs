@@ -182,21 +182,9 @@ namespace IsoMesh
             get
             {
                 if (m_sdfMeshAsset) return m_sdfMeshAsset;
-                Debug.Log($"Attempting to load sdfmeshasset:{SdfMeshAssetResourceName}");
-                
-                //m_sdfMeshAsset = Resources.Load<SDFMeshAsset>(SdfMeshAssetResourceName);
-
-                var json = File.ReadAllText("SDFMesh_SM_YZ_L4_G_64.asset");
-                m_sdfMeshAsset = JsonUtility.FromJson<SDFMeshAsset>(json);
-                
-                if (!m_sdfMeshAsset)
-                {
-                    Debug.Log($"failed to load bone ");
-                }
-                else
-                {
-                    Debug.Log($"successfully loaded");
-                }
+                Debug.Log($"Attempting to load sdf mesh asset:{SdfMeshAssetResourceName}");
+                m_sdfMeshAsset = Resources.Load<SDFMeshAsset>(SdfMeshAssetResourceName);
+                Debug.Log(!m_sdfMeshAsset ? $"failed to load bone " : $"successfully loaded");
 
                 return m_sdfMeshAsset;
             }
@@ -994,9 +982,10 @@ namespace IsoMesh
             // TODO:give bone samples to bone's sample
             m_samplesBuffer.GetData(_boneSamples);
             m_sdfMeshAsset.Samples = _boneSamples;
-            var updateJson = JsonUtility.ToJson(m_sdfMeshAsset);
-            File.WriteAllText("Assets/Resources/SDFMesh_SM_YZ_L4_G_64.asset",updateJson);
-            //SDFGroup.BoneSDF.Samples = _boneSamples;
+
+            // SDFMeshAssetBone.Samples = _boneSamples;
+            // EditorUtility.SetDirty(SDFMeshAssetBone);
+            // AssetDatabase.SaveAssets();
         }
 
         private void DispatchGenerateVertices()

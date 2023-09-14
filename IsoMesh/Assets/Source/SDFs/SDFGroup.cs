@@ -321,13 +321,17 @@ namespace IsoMesh
         /// <summary>
         /// Some mesh data is shared across all instances, such as the sample and UV information as well as the start indices in those static buffers
         /// for all meshes. Returns true if the static buffers have been changed and need to be resent to the groups.
+        /// 一些网格数据在所有实例之间共享，例如样本和UV信息以及所有网格的静态缓冲区中的开始索引。
+        /// 如果静态缓冲区已被更改并且需要重新发送到组，则返回true。
         /// </summary>
         /// <param name="locals">List of SDFMesh objects to ensure are in the global list.</param>
-        /// <param name="onlySendBufferOnChange">Whether to invoke the components and inform them the buffer has changed. This is only really necessary when the size changes.</param>
+        /// <param name="onlySendBufferOnChange">Whether to invoke the components and inform them the buffer has changed. This is only really necessary when the size changes.
+        /// 是否调用组件并通知它们缓冲区已更改。只有当大小发生变化时才需要这样做。
+        /// </param>
         private static bool RebuildGlobalMeshData(IList<SDFObject> locals, bool onlySendBufferOnChange = true)
         {
-            int previousMeshSamplesCount = m_meshSamples.Count;
-            int previousMeshUVsCount = m_meshPackedUVs.Count;
+            var previousMeshSamplesCount = m_meshSamples.Count;
+            var previousMeshUVsCount = m_meshPackedUVs.Count;
 
             m_meshSamples.Clear();
             m_meshPackedUVs.Clear();
@@ -336,22 +340,23 @@ namespace IsoMesh
             m_meshSdfUVStartIndices.Clear();
 
             // remove null refs
-            for (int i = m_globalSDFMeshes.Count - 1; i >= 0; --i)
+            for (var i = m_globalSDFMeshes.Count - 1; i >= 0; --i)
                 if (m_globalSDFMeshes[i] == null || m_globalSDFMeshes[i].Asset == null)
                     m_globalSDFMeshes.RemoveAt(i);
 
-            for (int i = 0; i < locals.Count; i++)
+            for (var i = 0; i < locals.Count; i++)
                 if (locals[i] is SDFMesh mesh && !m_globalSDFMeshes.Contains(mesh))
                     m_globalSDFMeshes.Add(mesh);
 
             // loop over each mesh, adding its samples/uvs to the sample buffer
             // and taking note of where each meshes samples start in the buffer.
             // check for repeats so we don't add the same mesh to the samples buffer twice
+            // 循环遍历每个网格，将其样本/uv添加到样本缓冲区中，并注意每个网格样本在缓冲区中的起始位置。检查重复，这样我们就不会两次向样本缓冲区添加相同的网格
             for (int i = 0; i < m_globalSDFMeshes.Count; i++)
             {
                 SDFMesh mesh = m_globalSDFMeshes[i];
 
-                // ignore meshes which are in the list but not present in any group
+                // ignore meshes which are in the list but not present in any group 忽略列表中但不存在于任何组中的网格
                 if (m_meshCounts.TryGetValue(mesh.ID, out int count) && count <= 0)
                     continue;
 
