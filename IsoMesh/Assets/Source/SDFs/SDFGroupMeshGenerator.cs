@@ -979,13 +979,13 @@ namespace IsoMesh
                 Mathf.CeilToInt(m_voxelSettings.SamplesPerSide / (float)y),
                 Mathf.CeilToInt(m_voxelSettings.SamplesPerSide / (float)z));
            
-            // TODO:give bone samples to bone's sample
             m_samplesBuffer.GetData(_boneSamples);
             m_sdfMeshAsset.Samples = _boneSamples;
-
-            // SDFMeshAssetBone.Samples = _boneSamples;
-            // EditorUtility.SetDirty(SDFMeshAssetBone);
-            // AssetDatabase.SaveAssets();
+            // TODO: _ = _boneSamples;
+            // 需要传递一个加载进内存的float[]变量,调节这个变量作为bone的采样点数组,
+            // bone的.asset的m_samples只在最开始读取一次,然后直接赋进一个static的float[],比如public static float[] samplesArray;记得给出分辨率大小
+            // 在RebuildGlobalMeshData的时候,不要获取.asset的samples了,直接重复读取static的float[] 就好了
+            
         }
 
         private void DispatchGenerateVertices()

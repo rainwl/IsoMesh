@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
+using Unity.Mathematics;
 using UnityEditor;
 using UnityEditor.Compilation;
 
@@ -24,6 +25,8 @@ namespace IsoMesh
             public static int MeshSamples_StructuredBuffer = Shader.PropertyToID("_SDFMeshSamples");
             public static int MeshPackedUVs_StructuredBuffer = Shader.PropertyToID("_SDFMeshPackedUVs");
         }
+
+        public static float[] SamplesArray = new float[64 * 64 * 64];
 
         public const float MIN_SMOOTHING = 0.00001f;
 
@@ -341,7 +344,7 @@ namespace IsoMesh
         /// 设置全局网格数据状态为“未修改”。
         /// 返回是否创建了新的buffer。
         /// 这段代码整体上的功能是对网格的样本和UV数据进行重新构建和缓存，清除无效的网格，保存有效网格的样本和UV数据，如果有新的数据加入则创建新的计算buffer来存储。
-        private static bool RebuildGlobalMeshData(IList<SDFObject> locals, bool onlySendBufferOnChange = true)
+        private static bool RebuildGlobalMeshData(IEnumerable<SDFObject> locals, bool onlySendBufferOnChange = true)
         {
             #region Clear
 
@@ -376,12 +379,12 @@ namespace IsoMesh
             // 循环遍历每个网格，将其样本/uv添加到样本缓冲区中，并注意每个网格样本在缓冲区中的起始位置。检查重复，这样我们就不会两次向样本缓冲区添加相同的网格
             foreach (var mesh in m_globalSDFMeshes)
             {
-                // ignore meshes which are in the list but not present in any group 忽略列表中但不存在于任何组中的网格
+                // 忽略列表中但不存在于任何组中的网格 ignore meshes which are in the list but not present in any group 
                 if (m_meshCounts.TryGetValue(mesh.ID, out var count) && count <= 0)
                     continue;
 
                 mesh.Asset.GetDataArrays(out var samples, out var packedUVs);
-
+                
                 if (!m_meshSdfSampleStartIndices.ContainsKey(mesh.ID))
                 {
                     var startIndex = m_meshSamples.Count;
@@ -396,6 +399,8 @@ namespace IsoMesh
                     m_meshSdfUVStartIndices.Add(mesh.ID, startIndex);
                 }
             }
+
+            #region post
 
             var newBuffers = false;
 
@@ -422,6 +427,9 @@ namespace IsoMesh
             m_isGlobalMeshDataDirty = false;
 
             return newBuffers;
+
+            #endregion
+            
         }
 
         /// <summary>
@@ -454,31 +462,27 @@ namespace IsoMesh
             m_isLocalDataDirty = false;
 
             // should we rebuild the buffers which contain mesh sample + uv data?
-            bool globalBuffersChanged = false;
+            var globalBuffersChanged = false;
             if (m_meshSamplesBuffer == null || !m_meshSamplesBuffer.IsValid() || m_meshPackedUVsBuffer == null || !m_meshPackedUVsBuffer.IsValid() || m_isGlobalMeshDataDirty)
                 globalBuffersChanged = RebuildGlobalMeshData(m_sdfObjects, onlySendBufferOnChange);
 
             // memorize the size of the array before clearing it, for later comparison
-            int previousCount = m_data.Count;
+            var previousCount = m_data.Count;
             m_data.Clear();
             m_materials.Clear();
 
             // add all the sdf objects
-            for (int i = 0; i < m_sdfObjects.Count; i++)
+            foreach (var sdfObject in m_sdfObjects.Where(sdfObject => sdfObject))
             {
-                SDFObject sdfObject = m_sdfObjects[i];
-
-                if (!sdfObject)
-                    continue;
-
                 sdfObject.SetClean();
 
-                int meshStartIndex = -1;
-                int uvStartIndex = -1;
+                var meshStartIndex = -1;
+                var uvStartIndex = -1;
 
                 if (sdfObject is SDFMesh mesh)
                 {
                     // get the index in the global samples buffer where this particular mesh's samples begin
+                    // 获取全局样本缓冲区中这个特定网格样本开始的索引 
                     if (!m_meshSdfSampleStartIndices.TryGetValue(mesh.ID, out meshStartIndex))
                         globalBuffersChanged = RebuildGlobalMeshData(m_sdfObjects, onlySendBufferOnChange); // we don't recognize this mesh so we may need to rebuild the entire global list of mesh samples and UVs
 
@@ -491,7 +495,7 @@ namespace IsoMesh
                 m_materials.Add(sdfObject.GetMaterial());
             }
 
-            bool sendBuffer = !onlySendBufferOnChange;
+            var sendBuffer = !onlySendBufferOnChange;
 
             // check whether we need to create a new buffer. buffers are fixed sizes so the most common occasion for this is simply a change of size
             if (m_dataBuffer == null || !m_dataBuffer.IsValid() || previousCount != m_data.Count)
