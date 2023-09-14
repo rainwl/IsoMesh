@@ -4,6 +4,7 @@ using UnityEngine;
 using System.Runtime.InteropServices;
 using Source.SDFs;
 using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine.Rendering;
 
 #if UNITY_EDITOR
@@ -175,7 +176,6 @@ namespace IsoMesh
         
         private const string SdfMeshAssetResourceName = "SDFMesh_SM_YZ_L4_G_64";
         [SerializeField] private SDFMeshAsset m_sdfMeshAsset;
-        private SDFMeshAsset m_sdfMeshAssetInstance;
 
         private SDFMeshAsset SDFMeshAssetBone
         {
@@ -376,6 +376,15 @@ namespace IsoMesh
 
             if (m_meshGameObject)
                 m_meshGameObject.transform.hasChanged = false;
+            if (Input.GetKeyUp(KeyCode.Space))
+            {
+                Debug.Log($"dsfasfs");
+                for (int i = 0; i < SDFGroup.SamplesArray.Length/2; i++)
+                {
+                    SDFGroup.SamplesArray[i] = 0;
+                }
+                
+            }
         }
 
         private void LateUpdate()
@@ -980,12 +989,11 @@ namespace IsoMesh
                 Mathf.CeilToInt(m_voxelSettings.SamplesPerSide / (float)z));
            
             m_samplesBuffer.GetData(_boneSamples);
-            m_sdfMeshAsset.Samples = _boneSamples;
-            // TODO: _ = _boneSamples;
-            // 需要传递一个加载进内存的float[]变量,调节这个变量作为bone的采样点数组,
-            // bone的.asset的m_samples只在最开始读取一次,然后直接赋进一个static的float[],比如public static float[] samplesArray;记得给出分辨率大小
-            // 在RebuildGlobalMeshData的时候,不要获取.asset的samples了,直接重复读取static的float[] 就好了
+            // SDFGroup.SamplesArray = _boneSamples;
             
+            
+            // TODO 测试一下如果直接强行修改了sample,行不行
+
         }
 
         private void DispatchGenerateVertices()

@@ -221,7 +221,7 @@ float3 unsignedDirection_mesh(float3 p, SDFGPUData data, out float distSign, out
     
     return finalVec;
 }
-// 是不是在这里,直接把data值改成0
+
 float sdf(float3 p, SDFGPUData data)
 {
     if (data.IsMesh())
@@ -324,7 +324,7 @@ float2 sdf_uv(float3 p, SDFGPUData data, out float dist)
         }
     }
 }
-
+//在此时,Map就实现了一个,
 float Map(float3 p)
 {
     float minDist = 10000000.0;

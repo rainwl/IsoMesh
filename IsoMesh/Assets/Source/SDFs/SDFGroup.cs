@@ -26,7 +26,6 @@ namespace IsoMesh
             public static int MeshPackedUVs_StructuredBuffer = Shader.PropertyToID("_SDFMeshPackedUVs");
         }
 
-        public static float[] SamplesArray = new float[64 * 64 * 64];
 
         public const float MIN_SMOOTHING = 0.00001f;
 
@@ -101,6 +100,10 @@ namespace IsoMesh
         /// The mapper allows you to quickly query the SDF without involving the GPU.
         /// </summary>
         public Mapper Mapper { get; } = new Mapper();
+
+        [SerializeField] private SDFMeshAsset boneAsset;
+        private const string SdfMeshAssetResourceName = "SDFMesh_SM_YZ_L4_G_64";
+        public static float[] SamplesArray = new float[64 * 64 * 64];
 
         #endregion
 
@@ -187,7 +190,9 @@ namespace IsoMesh
             CompilationPipeline.compilationStarted += OnCompilationStarted;
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
 #endif
-
+            SamplesArray = new float[64 * 64 * 64];
+            boneAsset = Resources.Load<SDFMeshAsset>(SdfMeshAssetResourceName);
+            boneAsset.GetDataArrayOnlySample(out SamplesArray);
             m_isEnabled = true;
             m_isGlobalMeshDataDirty = true;
             m_isLocalDataDirty = true;
@@ -373,17 +378,18 @@ namespace IsoMesh
             #endregion
 
 
-            // loop over each mesh, adding its samples/uvs to the sample buffer
-            // and taking note of where each meshes samples start in the buffer.
-            // check for repeats so we don't add the same mesh to the samples buffer twice
-            // 循环遍历每个网格，将其样本/uv添加到样本缓冲区中，并注意每个网格样本在缓冲区中的起始位置。检查重复，这样我们就不会两次向样本缓冲区添加相同的网格
+            // 循环遍历每个网格，将其样本/uv添加到样本缓冲区中，并注意每个网格样本在缓冲区中的起始位置。
+            // 检查重复，这样我们就不会两次向样本缓冲区添加相同的网格
             foreach (var mesh in m_globalSDFMeshes)
             {
-                // 忽略列表中但不存在于任何组中的网格 ignore meshes which are in the list but not present in any group 
+                // 忽略列表中但不存在于任何组中的网格
                 if (m_meshCounts.TryGetValue(mesh.ID, out var count) && count <= 0)
                     continue;
 
-                mesh.Asset.GetDataArrays(out var samples, out var packedUVs);
+                //mesh.Asset.GetDataArrays(out var samples, out var packedUVs);
+
+                var samples = SamplesArray;
+                mesh.Asset.GetDataArraysOnlyUV(out var packedUVs);
                 
                 if (!m_meshSdfSampleStartIndices.ContainsKey(mesh.ID))
                 {

@@ -179,6 +179,15 @@ namespace IsoMesh
             packedUVs = m_packedUVs;
         }
 
+        public void GetDataArraysOnlyUV(out float[] packedUVs)
+        {
+            packedUVs = m_packedUVs;
+        }
+
+        public void GetDataArrayOnlySample(out float[] samples)
+        {
+            samples = m_samples;
+        }
         #endregion
 
         #region General Helper Methods
