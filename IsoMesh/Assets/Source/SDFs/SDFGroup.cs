@@ -102,8 +102,8 @@ namespace IsoMesh
         public Mapper Mapper { get; } = new Mapper();
 
         [SerializeField] private SDFMeshAsset boneAsset;
-        private const string SdfMeshAssetResourceName = "SDFMesh_SM_YZ_L4_G_64";
-        public static float[] SamplesArray = new float[64 * 64 * 64];
+        private const string SdfMeshAssetResourceName = "SDFMesh_SM_YZ_L4_G_100";
+        public static float[] SamplesArray = new float[100 * 100 * 100];
 
         #endregion
 
@@ -190,7 +190,7 @@ namespace IsoMesh
             CompilationPipeline.compilationStarted += OnCompilationStarted;
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
 #endif
-            SamplesArray = new float[64 * 64 * 64];
+            SamplesArray = new float[100 * 100 * 100];
             boneAsset = Resources.Load<SDFMeshAsset>(SdfMeshAssetResourceName);
             boneAsset.GetDataArrayOnlySample(out SamplesArray);
             m_isEnabled = true;
@@ -430,7 +430,7 @@ namespace IsoMesh
             if (m_meshPackedUVs.Count > 0)
                 m_meshPackedUVsBuffer.SetData(m_meshPackedUVs);
 
-            m_isGlobalMeshDataDirty = false;
+            //m_isGlobalMeshDataDirty = false;
 
             return newBuffers;
 

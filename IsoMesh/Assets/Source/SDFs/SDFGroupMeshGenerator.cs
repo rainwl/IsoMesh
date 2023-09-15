@@ -174,7 +174,7 @@ namespace IsoMesh
         
         
         
-        private const string SdfMeshAssetResourceName = "SDFMesh_SM_YZ_L4_G_64";
+        private const string SdfMeshAssetResourceName = "SDFMesh_SM_YZ_L4_G_100";
         [SerializeField] private SDFMeshAsset m_sdfMeshAsset;
 
         private SDFMeshAsset SDFMeshAssetBone
@@ -319,7 +319,6 @@ namespace IsoMesh
 
         private void OnEnable()
         {
-            //boneSDF = Resources.Load<SDFMeshAsset>($"Data/SDFMeshes/SDFMesh_SM_YZ_L4_G_64");
             m_isEnabled = true;
             m_initialized = false;
 
@@ -987,13 +986,9 @@ namespace IsoMesh
             m_computeShaderInstance.Dispatch(m_kernels.Map, Mathf.CeilToInt(m_voxelSettings.SamplesPerSide / (float)x),
                 Mathf.CeilToInt(m_voxelSettings.SamplesPerSide / (float)y),
                 Mathf.CeilToInt(m_voxelSettings.SamplesPerSide / (float)z));
-           
+            // TODO
             m_samplesBuffer.GetData(_boneSamples);
-            // SDFGroup.SamplesArray = _boneSamples;
-            
-            
-            // TODO 测试一下如果直接强行修改了sample,行不行
-
+            SDFGroup.SamplesArray = _boneSamples;
         }
 
         private void DispatchGenerateVertices()

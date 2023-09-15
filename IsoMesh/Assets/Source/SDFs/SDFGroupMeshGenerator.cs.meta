@@ -5,7 +5,7 @@ MonoImporter:
   serializedVersion: 2
   defaultReferences:
   - m_computeShader: {fileID: 7200000, guid: 0e30fa915af718c4bb87a11c35937eb0, type: 3}
-  - m_sdfMeshAsset: {fileID: 11400000, guid: 048f821f6102c3a45a2415385fd3862b, type: 2}
+  - m_sdfMeshAsset: {fileID: 11400000, guid: 9c9ca27c55a8f4042ac6e4a4eb4e766f, type: 2}
   - m_group: {instanceID: 0}
   - m_meshGameObject: {instanceID: 0}
   - m_meshFilter: {instanceID: 0}
