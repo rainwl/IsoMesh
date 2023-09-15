@@ -419,6 +419,13 @@ namespace IsoMesh.Editor
                 MeshSampleComputeShader.SetInt(Properties.VertexCount_Int, m_vertices.Length);
 
                 RunBoundsPhase(mesh, out minBounds, out maxBounds);
+                
+
+                // var max = Mathf.Max(maxBounds.x, maxBounds.y, maxBounds.z);
+                // max = Mathf.CeilToInt(max);
+                // maxBounds = new Vector3(max, max, max);
+                // minBounds = maxBounds;
+                
                 RunSamplePhase(hasUVs, out samples, out packedUVs, minBounds, maxBounds);
             }
 
