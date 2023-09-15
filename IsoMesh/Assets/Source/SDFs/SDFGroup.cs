@@ -80,7 +80,7 @@ namespace IsoMesh
         private static readonly List<float> m_meshSamples = new List<float>();
         private static readonly List<float> m_meshPackedUVs = new List<float>();
 
-        private static ComputeBuffer m_meshSamplesBuffer;
+        private static ComputeBuffer m_meshSamplesBuffer;//_SDFMeshSamples
         private static ComputeBuffer m_meshPackedUVsBuffer;
 
         private List<SDFGPUData> m_data = new List<SDFGPUData>();

@@ -7,6 +7,7 @@ namespace IsoMesh
     /// <summary>
     /// This class is a direct port of the SDF GPU code, and lets you do query the distance field on the CPU side. It's best for small queries
     /// which don't need to be parallelized, such as individual raycasts.
+    /// 这个类是SDF GPU代码的直接端口，并允许您在CPU端查询距离字段。它最适合于不需要并行化的小查询，例如单个光线投射。
     /// </summary>
     public class Mapper
     {

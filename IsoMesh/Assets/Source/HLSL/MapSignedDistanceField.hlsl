@@ -28,7 +28,8 @@ StructuredBuffer<Settings> _Settings;
 
 StructuredBuffer<SDFGPUData> _SDFData;
 StructuredBuffer<SDFMaterialGPU> _SDFMaterials;
-int _SDFDataCount;
+int _SDFDataCount;//通过UpdateDataBuffer更新
+//m_sdfComponents[i].UpdateDataBuffer(m_dataBuffer, m_materialBuffer, m_data.Count);
 
 StructuredBuffer<float> _SDFMeshSamples;
 StructuredBuffer<float> _SDFMeshPackedUVs;
@@ -227,7 +228,9 @@ float sdf(float3 p, SDFGPUData data)
     if (data.IsMesh())
     {
         float distSign;
-        float3 transformedP;
+        //float3 transformedP;
+        float3 transformedP = mul(data.Transform, float4(p, 1.0)).xyz;
+        return  SampleAssetInterpolated(transformedP, data);
         float3 vec = unsignedDirection_mesh(p, data, distSign, transformedP);
         
         return length(vec) * distSign * data.Flip;
