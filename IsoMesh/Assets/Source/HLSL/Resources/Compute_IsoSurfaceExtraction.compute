@@ -126,8 +126,6 @@ int CellCoordinateToIndex(int x, int y, int z)
     return (x + y * _PointsPerSide + z * _PointsPerSide * _PointsPerSide);
 }
 
-
-
 [numthreads(4, 4, 4)]
 void Isosurface_Map(uint3 id : SV_DispatchThreadID)
 {
