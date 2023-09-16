@@ -89,7 +89,6 @@ float _CellSize; // the width/height/depth of every individual cell. again, alwa
 RWStructuredBuffer<float> _Samples;
 RWStructuredBuffer<int> _Counter;
 RWStructuredBuffer<int> _BuildMeshIndirectArgs;
-RWStructuredBuffer<float> VertexBuffer;
 AppendStructuredBuffer<VertexData> _VertexDataPoints;
 
 float3 CellCoordinateToVertex(int x, int y, int z)
@@ -139,12 +138,8 @@ void Isosurface_Map(uint3 id : SV_DispatchThreadID)
     int index = CellCoordinateToIndex(x, y, z);
 
     float3 vertex = CellCoordinateToVertex(x, y, z);
-    if (id == 0)
-    {
-        VertexBuffer = vertex;
-    }
+
     _Samples[index] = Map(vertex);
-    // 这里是不是应该直接修改原始sdf的索引的值
 }
 
 bool TryGetEdgeSurfaceIntersection(float sample_from, float sample_to, float3 localPoint_from, float3 localPoint_to,

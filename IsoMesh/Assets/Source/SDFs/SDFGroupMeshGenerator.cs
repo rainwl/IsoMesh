@@ -27,9 +27,6 @@ namespace IsoMesh
         {
             public static readonly int PointsPerSide_Int = Shader.PropertyToID("_PointsPerSide");
             public static readonly int CellSize_Float = Shader.PropertyToID("_CellSize");
-
-            public static readonly int VertexBuffer_Float3 = Shader.PropertyToID("VertexBuffer");
-                
             public static readonly int BinarySearchIterations_Int = Shader.PropertyToID("_BinarySearchIterations");
             public static readonly int IsosurfaceExtractionType_Int = Shader.PropertyToID("_IsosurfaceExtractionType");
             public static readonly int MaxAngleCosine_Float = Shader.PropertyToID("_MaxAngleCosine");
@@ -152,7 +149,7 @@ namespace IsoMesh
         private TriangleData[] m_triangles;
 
         [SerializeField] private ComputeShader m_computeShader;
-        
+
         private ComputeShader ComputeShader
         {
             get
@@ -173,9 +170,8 @@ namespace IsoMesh
         }
 
         private ComputeShader m_computeShaderInstance;
-        
-        
-        
+
+
         private const string SdfMeshAssetResourceName = "SDFMesh_SM_YZ_L4_G_100";
         [SerializeField] private SDFMeshAsset m_sdfMeshAsset;
 
@@ -191,9 +187,7 @@ namespace IsoMesh
                 return m_sdfMeshAsset;
             }
         }
-        
-        
-        
+
 
         [SerializeField] private SDFGroup m_group;
 
@@ -309,7 +303,8 @@ namespace IsoMesh
 
         private float[] _boneSamples;
 
-        private float[]
+        //private float[]
+
         #endregion
 
         #region MonoBehaviour Callbacks
@@ -381,11 +376,10 @@ namespace IsoMesh
             if (Input.GetKeyUp(KeyCode.Space))
             {
                 Debug.Log($"dsfasfs");
-                for (int i = 0; i < SDFGroup.SamplesArray.Length/2; i++)
+                for (int i = 0; i < SDFGroup.SamplesArray.Length / 2; i++)
                 {
                     SDFGroup.SamplesArray[i] = 0;
                 }
-                
             }
         }
 
@@ -686,7 +680,7 @@ namespace IsoMesh
 
             m_computeShaderInstance = Instantiate(ComputeShader);
             m_sdfMeshAsset = Instantiate(SDFMeshAssetBone);
-            
+
             SendTransformToGPU();
 
             m_kernels = new Kernels(ComputeShader);
@@ -781,7 +775,7 @@ namespace IsoMesh
                 //m_propertyBlock.SetBuffer(Properties.MeshUVs_RWBuffer, m_meshUVsBuffer);
                 m_propertyBlock.SetBuffer(Properties.MeshVertexMaterials_RWBuffer, m_meshVertexMaterialsBuffer);
             }
-            m_computeShaderInstance.SetBuffer(m_kernels.Map,Properties.VertexBuffer_Float3,_testBuffer);
+
             UpdateMapKernels(Properties.Samples_RWBuffer, m_samplesBuffer);
             m_computeShaderInstance.SetBuffer(m_kernels.GenerateVertices, Properties.CellData_RWBuffer,
                 m_cellDataBuffer);
@@ -881,7 +875,7 @@ namespace IsoMesh
                 DestroyImmediate(m_computeShaderInstance);
         }
 
-        private ComputeBuffer _testBuffer;
+
         /// <summary>
         /// Send a buffer to all kernels which use the map function.
         /// </summary>
@@ -895,6 +889,7 @@ namespace IsoMesh
                 Debug.Log("Attempting to pass null buffer to map kernels.");
                 return;
             }
+
             m_computeShaderInstance.SetBuffer(m_kernels.Map, id, buffer);
             m_computeShaderInstance.SetBuffer(m_kernels.GenerateVertices, id, buffer);
             m_computeShaderInstance.SetBuffer(m_kernels.GenerateTriangles, id, buffer);
@@ -991,7 +986,7 @@ namespace IsoMesh
                 Mathf.CeilToInt(m_voxelSettings.SamplesPerSide / (float)z));
             // TODO
             m_samplesBuffer.GetData(_boneSamples);
-            _testBuffer.GetData();
+            //_testBuffer.GetData();
             SDFGroup.SamplesArray = _boneSamples;
         }
 
