@@ -91,9 +91,23 @@ RWStructuredBuffer<int> _Counter;
 RWStructuredBuffer<int> _BuildMeshIndirectArgs;
 AppendStructuredBuffer<VertexData> _VertexDataPoints;
 
+// 这段代码是用来将一个在三维网格中的点（x，y，z）转换为实际的顶点坐标。该函数命名为"CellCoordinateToVertex"，可能在像是将网格下的坐标映射到实际空间下的应用场景中使用。
+// 让我们一段一段地来看这个代码：
+// float gridSize = (float)(_PointsPerSide - 1.0); 这里定义一个名为gridSize的浮点型变量，它的值等于"_PointsPerSide"减1后的值，并转换为浮点类型。"_PointsPerSide"可能代表了网格在每个边上的点的数量。
+// float bound = (gridSize / 2.0) * _CellSize; 这行代码定义了一个叫"bound"的变量，算出了网格每个边（长度为gridSize）的一半乘以"_CellSize"（可能代表每个网格单元的实际大小）后的结果，这个结果可能代表了从中心点到边缘的最大距离。
+// 接下来的几行代码，利用lerp（线性插值）函数和saturate函数，将坐标值从网格坐标系转换到实际的顶点坐标系。
+// float xPos = lerp(-bound, bound, saturate(x / gridSize));
+// float yPos = lerp(-bound, bound, saturate(y / gridSize));
+// float zPos = lerp(-bound, bound, saturate(z / gridSize));
+// lerp函数的工作原理是根据第三个参数作为权重，返回第一个参数和第二个参数之间的插值。而saturate函数的作用是将参数的值限制在0和1之间。换句话说，lerp和saturate结合使用后，每个坐标都将映射至-bounded和bounded之间，相对于原始的网格的点坐标会在实际的空间内进行放大或者缩小。
+// float3 untransformed = float3(xPos, yPos, zPos); 这里定义了一个名为untransformed的float3类型（可能是一个三维向量类型）变量，它的值等于xPos，yPos和zPos。
+// return mul(_GroupTransform, float4(untransformed, 1.0)).xyz; 最后，代码通过乘以一个名为"_GroupTransform"的矩阵，来实现对untransformed的变换，得到经过旋转和/或者位移后的坐标位置，作为函数的输出结果。在这一步，float4(untransformed, 1.0)是将untransform的三维向量变为四维向量，这是为了方便应用仿射变换，比如旋转、平移等操作。
+// 注意: 如果你正在Unity和C#环境下面工作，你需要用Unity的实现替换对应函数，因为lerp, saturate, mul, float3和float4在C#环境下是找不到的。这些在HLSL（High Level Shading Language）中常见，是计算机图形中的用语。
+
 float3 CellCoordinateToVertex(int x, int y, int z)
 {
-    float gridSize = (float)(_PointsPerSide - 1.0);
+    //float gridSize = (float)(_PointsPerSide - 1.0);
+    float gridSize = (float)(_PointsPerSide);
     float bound = (gridSize / 2.0) * _CellSize;
 
     float xPos = lerp(-bound, bound, saturate(x / gridSize));

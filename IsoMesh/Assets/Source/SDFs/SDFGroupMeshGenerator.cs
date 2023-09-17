@@ -986,7 +986,6 @@ namespace IsoMesh
                 Mathf.CeilToInt(m_voxelSettings.SamplesPerSide / (float)z));
             // TODO
             m_samplesBuffer.GetData(_boneSamples);
-            //_testBuffer.GetData();
             SDFGroup.SamplesArray = _boneSamples;
         }
 

@@ -15,7 +15,7 @@ namespace IsoMesh
     /// 
     /// This class also contains the functionality to directly provide information about the SDF, like raycasting.
     /// </summary>
-    [ExecuteInEditMode]
+    //[ExecuteInEditMode]
     public class SDFGroup : MonoBehaviour
     {
         #region Fields and Properties
