@@ -223,6 +223,11 @@ float3 unsignedDirection_mesh(float3 p, SDFGPUData data, out float distSign, out
     return finalVec;
 }
 
+float SdfXyz(int x, int y, int z, SDFGPUData data)
+{
+    return GetSignedDistance(x, y, z, data);
+}
+
 float sdf(float3 p, SDFGPUData data)
 {
     if (data.IsMesh())
@@ -328,6 +333,37 @@ float2 sdf_uv(float3 p, SDFGPUData data, out float dist)
     }
 }
 //在此时,Map就实现了一个,
+float Map(float3 p,int x, int y,int z)
+{
+    float minDist = 10000000.0;
+    
+    [fastopt]
+    for (int i = 0; i < _SDFDataCount; i++)
+    {
+        SDFGPUData data = _SDFData[i];
+        
+        if (data.IsOperation())
+        {
+            p = sdf_op_elongate(p, data.Data.xyz, data.Transform);
+        }
+        else
+        {
+            if (data.Operation == 0)
+                //minDist = sdf_op_smin(sdf(p, data), minDist, data.Smoothing);
+                minDist = sdf_op_smin(SdfXyz(x,y,z,data),minDist,data.Smoothing);
+            else if (data.Operation == 1)
+            {
+                minDist = sdf_op_smoothSubtraction(sdf(p, data), minDist, data.Smoothing);
+                //在这里把data里的那个数据给改成0?
+                
+            }
+            else
+                minDist = sdf_op_smoothIntersection(sdf(p, data), minDist, data.Smoothing);
+        }
+    }
+    
+    return minDist;
+}
 float Map(float3 p)
 {
     float minDist = 10000000.0;
@@ -358,7 +394,6 @@ float Map(float3 p)
     
     return minDist;
 }
-
 
 SDFMaterialGPU MapColour(float3 p)
 {

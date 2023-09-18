@@ -151,7 +151,7 @@ void Isosurface_Map(uint3 id : SV_DispatchThreadID)
 
     float3 vertex = CellCoordinateToVertex(x, y, z);
 
-    _Samples[index] = Map(vertex);
+    _Samples[index] = Map(vertex,x,y,z);
 }
 
 bool TryGetEdgeSurfaceIntersection(float sample_from, float sample_to, float3 localPoint_from, float3 localPoint_to,
