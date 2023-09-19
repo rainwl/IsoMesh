@@ -223,8 +223,29 @@ float3 unsignedDirection_mesh(float3 p, SDFGPUData data, out float distSign, out
     return finalVec;
 }
 
-float SdfXyz(int x, int y, int z, SDFGPUData data)
+float SdfXyz(float3 p, int x, int y, int z, SDFGPUData data)
 {
+//     float gridSize = 100 - 1.0;
+//     float cellSize = 0.12;
+//     
+//     // Calculate the scaled coordinates within the grid
+//     float3 scaledP = (p + gridSize / 2.0) / cellSize;
+//
+//     // Convert to integer coordinates
+//     int xi = int(scaledP.x);
+//     int yi = int(scaledP.y);
+//     int zi = int(scaledP.z);
+//
+//     // Ensure xi, yi, and zi are within valid bounds
+//     xi = max(0, min(100 - 1, xi));
+//     yi = max(0, min(100 - 1, yi));
+//     zi = max(0, min(100 - 1, zi));
+//         
+//     // Retrieve the signed distance value from originData
+//     int index = xi + yi * 100 + zi * 100 * 100;
+//
+// return _SDFMeshSamples[index];
+    
     return GetSignedDistance(x, y, z, data);
 }
 
@@ -350,7 +371,7 @@ float Map(float3 p,int x, int y,int z)
         {
             if (data.Operation == 0)
                 //minDist = sdf_op_smin(sdf(p, data), minDist, data.Smoothing);
-                minDist = sdf_op_smin(SdfXyz(x,y,z,data),minDist,data.Smoothing);
+                minDist = sdf_op_smin(SdfXyz(p,x,y,z,data),minDist,data.Smoothing);
             else if (data.Operation == 1)
             {
                 minDist = sdf_op_smoothSubtraction(sdf(p, data), minDist, data.Smoothing);

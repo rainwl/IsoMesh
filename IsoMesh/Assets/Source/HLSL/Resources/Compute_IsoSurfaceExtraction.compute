@@ -106,8 +106,8 @@ AppendStructuredBuffer<VertexData> _VertexDataPoints;
 
 float3 CellCoordinateToVertex(int x, int y, int z)
 {
-    //float gridSize = (float)(_PointsPerSide - 1.0);
-    float gridSize = (float)(_PointsPerSide);
+    float gridSize = (float)(_PointsPerSide - 1.0);
+    //float gridSize = (float)(_PointsPerSide);
     float bound = (gridSize / 2.0) * _CellSize;
 
     float xPos = lerp(-bound, bound, saturate(x / gridSize));
