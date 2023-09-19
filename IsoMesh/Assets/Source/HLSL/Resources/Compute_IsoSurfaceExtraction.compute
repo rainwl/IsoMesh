@@ -154,6 +154,15 @@ void Isosurface_Map(uint3 id : SV_DispatchThreadID)
     _Samples[index] = Map(vertex,x,y,z);
 }
 
+// 主要用于计算两点之间的交点，并通过二分搜索进行优化以提高精度。它的主要运用情况可能是用于计算图形渲染，特别是在游戏或3D模型中。
+// 以下是该代码的解释：
+// 方法接受6个参数，前四个是类型为 float 的 sample_from 和 sample_to，以及类型为 float3 的 localPoint_from 和 localPoint_to。此外，还有一个类型为 float3 的 localOrigin 参数。最后的 out float3 localIntersectionPoint 是输出参数，用于返回本地交点位置。
+// 方法首先初始化输出参数 localIntersectionPoint 为 (0, 0, 0)。
+// 接下来，通过检查 sample_from 和 sample_to 的符号是否相同来确定两个样本点是否在同一侧。如果它们在同一侧，则返回 false 并退出方法。
+// 若 _BinarySearchIterations 小于或等于0，则将直接计算出交点并返回。计算公式为 t = sample_from / (sample_from - sample_to)，然后使用 lerp 函数（线性插值）获取交点。
+// 若 _BinarySearchIterations 大于0，则进入二分搜索优化过程。首先，设置 localIntersectionPoint 为 localPoint_from 和 localPoint_to 的中点。然后，开始 _BinarySearchIterations 次循环，每次循环都更新 sample_new ，并根据 sample_new 的符号判断新点是在 sample_to 的同侧，还是在 sample_from 的同侧，并更新对应的样本和本地点，最后更新 localIntersectionPoint。
+// 最后，方法返回 true。
+// 需要注意的是，float3 是一个具有三个浮点数成员的数据类型，常用于表示3D空间中的向量或者点的位置。而 Map 函数在这段代码中没有定义，可能是计算某种特定映射的函数。
 bool TryGetEdgeSurfaceIntersection(float sample_from, float sample_to, float3 localPoint_from, float3 localPoint_to,
                                    float3 localOrigin, out float3 localIntersectionPoint)
 {
@@ -193,7 +202,15 @@ bool TryGetEdgeSurfaceIntersection(float sample_from, float sample_to, float3 lo
     return true;
 }
 
-
+// 从代码来看，这段代码主要是在实现一种被称为"体素网格的平滑表面生成"的过程。
+// 具体来说，该代码尝试从一个体素栅格生成一个平滑的表面，这在图形渲染，特别是对像地形或任何需要平滑表面的三维形状的渲染中非常有用。
+// 函数 TryGetSurfacePoint 接受五个参数，两个是输出参数 surfacePoint 和 normal，它们分别表示表面上一点的位置和该点的精确法线，另外三个是输入参数 x、y、z，表示体素栅格中一个特定单元格的xyz坐标。
+// vertices 数组存储的是体素单元格中 8 个顶点的指数。这些顶点根据 CellCoordinateToIndex 函数转换，在此基础上定义了一个物体是否处于表面。
+// 这段代码首先通过检查体素单元格的每个顶点是否在表面上来确定该物体是否在表面上，这个检查是通过检查样本的符号和第一个顶点是否不同来完成的。如果它们中的任何一个有不同的符号，我们就知道我们在表面上有一个交叉点。
+// 如果确定了物体位于表面上, 代码会进一步通过游走到每一条边并检查其是否与表面相交来计算表面的精确位置和法线。这通过判断每条边上的样本值的符号是否变化来完成。如果符号变化，则说明在该边上存在一个表面交叉点。
+// 一旦所有的表面交叉点都被确定，代码会计算出一个平均交叉点，这个点是由所有交叉点的位置的平均值得到的。
+// 最后，该程序使用梯度下降法来优化表面点的位置，同时通过 MapNormal 函数来计算表面点的精确法线。
+// 总的来说，这个函数的功能是在体素栅格中找到并优化表面点的位置并计算相应的法线，这是在实现图形渲染时的一个重要步骤。
 bool TryGetSurfacePoint(int x, int y, int z, out float3 surfacePoint, out int cubeIndex, out float3 normal)
 {
     surfacePoint = float3(0, 0, 0);
@@ -243,6 +260,13 @@ bool TryGetSurfacePoint(int x, int y, int z, out float3 surfacePoint, out int cu
     // in dual contouring, the surface point is a vector which most closely approximates the point of intersection of all the planes
     // which intersect the edge intersection points and are tangent to their normals
     // ref: https://bonsairobo.medium.com/smooth-voxel-mapping-a-technical-deep-dive-on-real-time-surface-nets-and-texturing-ef06d0f8ca14
+    //如果我们在表面上，我们需要检查这个网格顶点的每个网格边，以检查它是否与表面相交
+    //我们通过检查符号是否改变来完成
+    //对于12条边中的每一条，如果每个顶点之间的距离值的符号发生变化，则存在一个曲面相交
+    //在沿边的某一点与距离的变化成正比
+    //立方体表面点是所有边缘交点的平均值(在表面网中)
+    //在对偶轮廓中，曲面点是最接近所有平面交点的矢量
+    //与边交点相交并与其法线相切
 
     float halfCellSize = 0.5 * _CellSize;
     float3 localCellOrigin = IndexToVertex(vertices[A]) + float3(halfCellSize, halfCellSize, halfCellSize);
@@ -306,6 +330,17 @@ bool TryGetSurfacePoint(int x, int y, int z, out float3 surfacePoint, out int cu
 
 RWStructuredBuffer<CellData> _CellDataPoints;
 
+// 这段代码是一个用于生成顶点的 HLSL 计算着色器内核。这个内核特别用于通过 Marching Cubes 算法生成体素表面的顶点，这种算法常常用于实现实时地形修改的游戏。
+// 以下是代码的详细解释：
+// 该内核以 [numthreads(4, 4, 4)] 注解标记，表示每个线程组中都有4x4x4个线程，即每个线程组有64个线程。
+// Isosurface_GenerateVertices 方法接收 id 参数，其中 SV_DispatchThreadID 是系统值语义，表示发起这个线程的全局索引。
+// x、y、z 的值从 id 的 x、y、z 分量中获取。
+// result、normal 用于存储从 TryGetSurfacePoint 方法中获取的表面点和法线向量，index 和 cellData 用于存储索引和单元格数据。
+// TryGetSurfacePoint 函数尝试获取一个在指定 x, y, z 位置的表面点。如果获取成功，则创建一个 VertexData 对象并填充数据，然后将这个数据插入 _VertexDataPoints 结构化缓冲区，并对 VERTEX_COUNT 进行原子加法操作；如果获取失败，则设置 cellData.SurfacePoint 为 (0, 0, 0)。
+// 无论 TryGetSurfacePoint 是否成功，都将 cellData.VertexID 设置为 -1，然后将 cellData 存储到 _CellDataPoints 结构化缓冲器的 index 索引处。
+// 最后，使用 InterlockedMax 将 VERTEX_COUNT / 64.0 向上取整并存储到 VERTEX_COUNT_DIV_64 中。
+// 需要注意的是，InterlockedAdd 和 InterlockedMax 是原子操作的函数，可以在并行语境中安全地更新共享变量的值。
+// 此函数可能在 HSL 的一个 Compute Shader（计算着色器）中，用于图形渲染过程中的并行计算。
 // this kernel is dispatched per cell in the form x, y, z
 [numthreads(4, 4, 4)]
 void Isosurface_GenerateVertices(uint3 id : SV_DispatchThreadID)
