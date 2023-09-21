@@ -330,11 +330,7 @@ bool TryGetSurfacePoint(int x, int y, int z, out float3 surfacePoint, out int cu
 
 RWStructuredBuffer<CellData> _CellDataPoints;
 
-// 这段代码是一个用于生成顶点的 HLSL 计算着色器内核。这个内核特别用于通过 Marching Cubes 算法生成体素表面的顶点，这种算法常常用于实现实时地形修改的游戏。
-// 以下是代码的详细解释：
-// 该内核以 [numthreads(4, 4, 4)] 注解标记，表示每个线程组中都有4x4x4个线程，即每个线程组有64个线程。
-// Isosurface_GenerateVertices 方法接收 id 参数，其中 SV_DispatchThreadID 是系统值语义，表示发起这个线程的全局索引。
-// x、y、z 的值从 id 的 x、y、z 分量中获取。
+// 这个内核特别用于通过 Marching Cubes 算法生成体素表面的顶点
 // result、normal 用于存储从 TryGetSurfacePoint 方法中获取的表面点和法线向量，index 和 cellData 用于存储索引和单元格数据。
 // TryGetSurfacePoint 函数尝试获取一个在指定 x, y, z 位置的表面点。如果获取成功，则创建一个 VertexData 对象并填充数据，然后将这个数据插入 _VertexDataPoints 结构化缓冲区，并对 VERTEX_COUNT 进行原子加法操作；如果获取失败，则设置 cellData.SurfacePoint 为 (0, 0, 0)。
 // 无论 TryGetSurfacePoint 是否成功，都将 cellData.VertexID 设置为 -1，然后将 cellData 存储到 _CellDataPoints 结构化缓冲器的 index 索引处。
@@ -348,12 +344,15 @@ void Isosurface_GenerateVertices(uint3 id : SV_DispatchThreadID)
     int x = id.x;
     int y = id.y;
     int z = id.z;
-
+    // result、normal 用于存储从 TryGetSurfacePoint 方法中获取的表面点和法线向量，index 和 cellData 用于存储索引和单元格数据。
     float3 result;
     float3 normal;
     int index;
     CellData cellData;
-
+    // TryGetSurfacePoint 函数尝试获取一个在指定 x, y, z 位置的表面点。
+    // 如果获取成功，则创建一个 VertexData 对象并填充数据，
+    // 然后将这个数据插入 _VertexDataPoints 结构化缓冲区，并对 VERTEX_COUNT 进行原子加法操作；
+    // 如果获取失败，则设置 cellData.SurfacePoint 为 (0, 0, 0)。
     if (TryGetSurfacePoint(x, y, z, result, index, normal))
     {
         VertexData data;
