@@ -171,24 +171,6 @@ namespace IsoMesh
 
         private ComputeShader m_computeShaderInstance;
 
-
-        private const string SdfMeshAssetResourceName = "SDFMesh_SM_YZ_L4_G_100";
-        [SerializeField] private SDFMeshAsset m_sdfMeshAsset;
-
-        private SDFMeshAsset SDFMeshAssetBone
-        {
-            get
-            {
-                if (m_sdfMeshAsset) return m_sdfMeshAsset;
-                Debug.Log($"Attempting to load sdf mesh asset:{SdfMeshAssetResourceName}");
-                m_sdfMeshAsset = Resources.Load<SDFMeshAsset>(SdfMeshAssetResourceName);
-                Debug.Log(!m_sdfMeshAsset ? $"failed to load bone " : $"successfully loaded");
-
-                return m_sdfMeshAsset;
-            }
-        }
-
-
         [SerializeField] private SDFGroup m_group;
 
         public SDFGroup Group
@@ -679,7 +661,6 @@ namespace IsoMesh
             m_initialized = true;
 
             m_computeShaderInstance = Instantiate(ComputeShader);
-            m_sdfMeshAsset = Instantiate(SDFMeshAssetBone);
 
             SendTransformToGPU();
 
@@ -984,7 +965,7 @@ namespace IsoMesh
             m_computeShaderInstance.Dispatch(m_kernels.Map, Mathf.CeilToInt(m_voxelSettings.SamplesPerSide / (float)x),
                 Mathf.CeilToInt(m_voxelSettings.SamplesPerSide / (float)y),
                 Mathf.CeilToInt(m_voxelSettings.SamplesPerSide / (float)z));
-            // TODO
+            // TODO : GetData
             m_samplesBuffer.GetData(_boneSamples);
             SDFGroup.SamplesArray = _boneSamples;
         }

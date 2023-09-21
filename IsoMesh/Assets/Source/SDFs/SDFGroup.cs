@@ -386,6 +386,7 @@ namespace IsoMesh
                 if (m_meshCounts.TryGetValue(mesh.ID, out var count) && count <= 0)
                     continue;
 
+                // TODO : var samples = SamplesArray;
                 //mesh.Asset.GetDataArrays(out var samples, out var packedUVs);
 
                 var samples = SamplesArray;
